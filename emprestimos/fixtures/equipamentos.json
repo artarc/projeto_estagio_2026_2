@@ -1,0 +1,63 @@
+[
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 1,
+    "fields": {
+      "nome": "Notebook Dell",
+      "tipo": "Notebook",
+      "identificacao": "NB-DELL-001",
+      "ativo": true
+    }
+  },
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 2,
+    "fields": {
+      "nome": "Notebook Lenovo",
+      "tipo": "Notebook",
+      "identificacao": "NB-LENOVO-001",
+      "ativo": true
+    }
+  },
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 3,
+    "fields": {
+      "nome": "Monitor 24 polegadas",
+      "tipo": "Monitor",
+      "identificacao": "MON-24-001",
+      "ativo": true
+    }
+  },
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 4,
+    "fields": {
+      "nome": "Projetor",
+      "tipo": "Audiovisual",
+      "identificacao": "PROJ-001",
+      "ativo": true
+    }
+  },
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 5,
+    "fields": {
+      "nome": "Headset",
+      "tipo": "Periférico",
+      "identificacao": "HEAD-001",
+      "ativo": true
+    }
+  },
+  {
+    "model": "emprestimos.equipamento",
+    "pk": 6,
+    "fields": {
+      "nome": "Kit teclado e mouse",
+      "tipo": "Periférico",
+      "identificacao": "KIT-001",
+      "ativo": true
+    }
+  }
+]
+
