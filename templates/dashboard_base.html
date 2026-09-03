@@ -1,0 +1,36 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Painel administrativo do AssetFlow.">
+    <title>{% block title %}Painel | AssetFlow{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="dashboard-body">
+    <header class="dashboard-header">
+        <div class="container dashboard-header-inner">
+            <a class="brand brand-inverse" href="{% url 'dashboard' %}" aria-label="AssetFlow — painel">
+                <span class="brand-mark" aria-hidden="true">A</span>
+                <span>Asset<span>Flow</span></span>
+            </a>
+            <div class="dashboard-user">
+                <span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                    {{ user.first_name|default:user.username }}
+                </span>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">
+                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3M15 3h5a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-5"/></svg>
+                        Sair
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+    <main class="dashboard-main">{% block content %}{% endblock %}</main>
+</body>
+</html>
+
