@@ -63,6 +63,31 @@ class SolicitacaoEmprestimo(models.Model):
                 {"data_devolucao": "A devolução não pode ser anterior à retirada."}
             )
 
+    def tem_conflito_confirmado(self):
+        return SolicitacaoEmprestimo.objects.filter(
+            equipamento=self.equipamento,
+            status=self.Status.CONFIRMADO,
+            data_retirada__lte=self.data_devolucao,
+            data_devolucao__gte=self.data_retirada,
+        ).exclude(pk=self.pk).exists()
+
+    def confirmar(self):
+        if self.status != self.Status.PENDENTE:
+            return False
+        if self.tem_conflito_confirmado():
+            raise ValidationError(
+                "O equipamento já está reservado nesse período."
+            )
+        self.status = self.Status.CONFIRMADO
+        self.save(update_fields=["status"])
+        return True
+
+    def cancelar(self):
+        if self.status != self.Status.PENDENTE:
+            return False
+        self.status = self.Status.CANCELADO
+        self.save(update_fields=["status"])
+        return True
+
     def __str__(self):
         return f"{self.nome} — {self.equipamento.nome}"
-

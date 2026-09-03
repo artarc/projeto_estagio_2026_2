@@ -8,6 +8,16 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path(
+        "dashboard/solicitacoes/<int:pk>/confirmar/",
+        views.confirmar_solicitacao,
+        name="confirmar_solicitacao",
+    ),
+    path(
+        "dashboard/solicitacoes/<int:pk>/cancelar/",
+        views.cancelar_solicitacao,
+        name="cancelar_solicitacao",
+    ),
+    path(
         "login/",
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="login",

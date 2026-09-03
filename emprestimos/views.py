@@ -1,8 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 
 from .forms import SolicitacaoEmprestimoForm
 from .models import Equipamento, SolicitacaoEmprestimo
@@ -70,3 +73,43 @@ def dashboard(request):
             "status_opcoes": SolicitacaoEmprestimo.Status.choices,
         },
     )
+
+
+@login_required
+@require_POST
+def confirmar_solicitacao(request, pk):
+    with transaction.atomic():
+        solicitacao = get_object_or_404(
+            SolicitacaoEmprestimo.objects.select_for_update(),
+            pk=pk,
+        )
+        try:
+            alterada = solicitacao.confirmar()
+        except ValidationError:
+            messages.error(
+                request,
+                "Não foi possível confirmar: o equipamento já está reservado nesse período.",
+            )
+        else:
+            if alterada:
+                messages.success(request, "Solicitação confirmada com sucesso.")
+            else:
+                messages.info(request, "A solicitação já foi analisada.")
+
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def cancelar_solicitacao(request, pk):
+    with transaction.atomic():
+        solicitacao = get_object_or_404(
+            SolicitacaoEmprestimo.objects.select_for_update(),
+            pk=pk,
+        )
+        if solicitacao.cancelar():
+            messages.success(request, "Solicitação cancelada com sucesso.")
+        else:
+            messages.info(request, "A solicitação já foi analisada.")
+
+    return redirect("dashboard")

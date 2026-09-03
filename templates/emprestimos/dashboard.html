@@ -77,7 +77,22 @@
                                 <td data-label="Devolução">{{ solicitacao.data_devolucao|date:"d M Y" }}</td>
                                 <td data-label="Status"><span class="status-badge status-{{ solicitacao.status }}">{{ solicitacao.get_status_display }}</span></td>
                                 <td data-label="Recebida em">{{ solicitacao.criado_em|date:"d M Y H:i" }}</td>
-                                <td data-label="Ações"><span class="no-action">—</span></td>
+                                <td data-label="Ações">
+                                    {% if solicitacao.status == "pendente" %}
+                                        <div class="row-actions">
+                                            <form method="post" action="{% url 'confirmar_solicitacao' solicitacao.pk %}">
+                                                {% csrf_token %}
+                                                <button class="action-button action-confirm" type="submit">Confirmar</button>
+                                            </form>
+                                            <form method="post" action="{% url 'cancelar_solicitacao' solicitacao.pk %}">
+                                                {% csrf_token %}
+                                                <button class="action-button action-cancel" type="submit">Cancelar</button>
+                                            </form>
+                                        </div>
+                                    {% else %}
+                                        <span class="no-action">—</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -93,4 +108,3 @@
     </section>
 </div>
 {% endblock %}
-
