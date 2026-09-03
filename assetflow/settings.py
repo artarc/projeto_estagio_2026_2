@@ -57,7 +57,9 @@ WSGI_APPLICATION = "assetflow.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": Path(
+            os.environ.get("SQLITE_PATH", str(BASE_DIR / "db.sqlite3"))
+        ),
     }
 }
 
@@ -82,4 +84,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
-
