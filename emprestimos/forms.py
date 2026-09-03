@@ -34,13 +34,17 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
         }
         labels = {
             "nome": "Nome completo",
+            "email": "E-mail",
+            "data_retirada": "Data de retirada",
             "data_devolucao": "Data prevista de devolução",
             "finalidade": "Finalidade do empréstimo",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["equipamento"].queryset = Equipamento.objects.filter(ativo=True)
+        self.fields["equipamento"].queryset = Equipamento.objects.filter(
+            ativo=True
+        ).order_by("pk")
         self.fields["equipamento"].empty_label = "Selecione um equipamento"
         minimum_date = date.today().isoformat()
         self.fields["data_retirada"].widget.attrs["min"] = minimum_date
@@ -80,4 +84,3 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
             )
 
         return cleaned_data
-

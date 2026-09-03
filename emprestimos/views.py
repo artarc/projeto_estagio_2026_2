@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from .forms import SolicitacaoEmprestimoForm
@@ -12,7 +13,7 @@ from .models import Equipamento, SolicitacaoEmprestimo
 
 
 def home(request):
-    equipamentos = Equipamento.objects.filter(ativo=True)
+    equipamentos = Equipamento.objects.filter(ativo=True).order_by("pk")
 
     if request.method == "POST":
         form = SolicitacaoEmprestimoForm(request.POST)
@@ -96,7 +97,7 @@ def confirmar_solicitacao(request, pk):
             else:
                 messages.info(request, "A solicitação já foi analisada.")
 
-    return redirect("dashboard")
+    return _redirecionar_para_dashboard(request)
 
 
 @login_required
@@ -112,4 +113,15 @@ def cancelar_solicitacao(request, pk):
         else:
             messages.info(request, "A solicitação já foi analisada.")
 
+    return _redirecionar_para_dashboard(request)
+
+
+def _redirecionar_para_dashboard(request):
+    destino = request.POST.get("next", "")
+    if destino and url_has_allowed_host_and_scheme(
+        destino,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(destino)
     return redirect("dashboard")

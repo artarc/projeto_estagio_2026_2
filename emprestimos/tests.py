@@ -124,6 +124,17 @@ class DashboardTests(TestCase):
             SolicitacaoEmprestimo.Status.CANCELADO,
         )
 
+    def test_acao_preserva_filtros_do_dashboard(self):
+        self.client.force_login(self.usuario)
+        destino = f"{reverse('dashboard')}?q=Bruno&status=pendente"
+
+        response = self.client.post(
+            reverse("cancelar_solicitacao", args=[self.solicitacao.pk]),
+            {"next": destino},
+        )
+
+        self.assertRedirects(response, destino)
+
 
 class ConflitoEmprestimoTests(TestCase):
     def setUp(self):
@@ -200,4 +211,3 @@ class ConflitoEmprestimoTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 405)
-
