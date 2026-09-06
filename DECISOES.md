@@ -18,6 +18,8 @@ O SQLite atende ao volume e à finalidade demonstrativa do teste, simplifica a i
 
 O AssetFlow possui apenas o model necessário para identificar e selecionar equipamentos. Não foi criado CRUD próprio, pois o catálogo é considerado responsabilidade de outro processo da empresa. Uma fixture reproduz o estado inicial para avaliação.
 
+Uma solicitação pode reunir vários equipamentos com o mesmo período e finalidade. A relação muitos-para-muitos evita duplicar os dados da pessoa solicitante e mantém a análise do conjunto em uma única ação. A migration converte automaticamente o equipamento das solicitações antigas para essa nova relação.
+
 ## Status e acesso ao painel
 
 Toda solicitação pública nasce como `pendente`; o campo de status não faz parte do formulário. Confirmar e cancelar são ações via POST e protegidas por login e CSRF. Para manter as permissões simples, qualquer usuário autenticado acessa o painel; o README orienta criar um superusuário para a avaliação.
@@ -28,7 +30,7 @@ Confirmação e cancelamento são transições finais neste escopo. Reabrir soli
 
 Períodos são inclusivos: se uma reserva termina no dia em que outra começa, há conflito, pois o equipamento ainda está emprestado nessa data. A verificação usa a condição direta `início existente <= fim novo` e `fim existente >= início novo`.
 
-Somente solicitações confirmadas bloqueiam outra confirmação. Pendências podem se sobrepor para que o gestor decida qual atender. Em caso de conflito, a nova solicitação permanece pendente e uma mensagem explica o motivo. A retirada no formulário público também não pode estar no passado.
+Somente solicitações confirmadas bloqueiam outra confirmação. Pendências podem se sobrepor para que o gestor decida qual atender. Quando uma solicitação possui vários equipamentos, o conflito de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. Em caso de conflito, a solicitação permanece pendente e uma mensagem explica o motivo. A retirada no formulário público também não pode estar no passado.
 
 ## Ordenação, filtros e estado vazio
 
@@ -36,7 +38,7 @@ A listagem é ordenada pela data de retirada e, em empate, pela criação. A bus
 
 ## Interface
 
-A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para sincronizar a seleção visual do catálogo com o formulário. O dashboard mantém tabela no desktop e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
+A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para sincronizar a seleção múltipla do catálogo com os checkboxes do formulário. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
 
 ## Docker
 
@@ -53,4 +55,3 @@ Esta seção deve refletir sua experiência real. Substitua os campos abaixo ant
 1. **O que deleguei para IA e o que fiz à mão:** [descreva aqui quais partes foram delegadas, quais você revisou ou produziu e por quê].
 2. **Uma sugestão ou implementação ruim da IA:** [descreva o que estava errado, como você percebeu e o que fez no lugar].
 3. **Uma decisão tomada contra a sugestão da IA:** [descreva a decisão e o motivo].
-

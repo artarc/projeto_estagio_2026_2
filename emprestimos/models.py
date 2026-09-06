@@ -26,9 +26,8 @@ class SolicitacaoEmprestimo(models.Model):
 
     nome = models.CharField(max_length=120)
     email = models.EmailField()
-    equipamento = models.ForeignKey(
+    equipamentos = models.ManyToManyField(
         Equipamento,
-        on_delete=models.PROTECT,
         related_name="solicitacoes",
     )
     data_retirada = models.DateField()
@@ -65,18 +64,18 @@ class SolicitacaoEmprestimo(models.Model):
 
     def tem_conflito_confirmado(self):
         return SolicitacaoEmprestimo.objects.filter(
-            equipamento=self.equipamento,
+            equipamentos__in=self.equipamentos.all(),
             status=self.Status.CONFIRMADO,
             data_retirada__lte=self.data_devolucao,
             data_devolucao__gte=self.data_retirada,
-        ).exclude(pk=self.pk).exists()
+        ).exclude(pk=self.pk).distinct().exists()
 
     def confirmar(self):
         if self.status != self.Status.PENDENTE:
             return False
         if self.tem_conflito_confirmado():
             raise ValidationError(
-                "O equipamento já está reservado nesse período."
+                "Um ou mais equipamentos já estão reservados nesse período."
             )
         self.status = self.Status.CONFIRMADO
         self.save(update_fields=["status"])
@@ -90,4 +89,7 @@ class SolicitacaoEmprestimo(models.Model):
         return True
 
     def __str__(self):
-        return f"{self.nome} — {self.equipamento.nome}"
+        if not self.pk:
+            return self.nome
+        nomes = ", ".join(self.equipamentos.values_list("nome", flat=True))
+        return f"{self.nome} — {nomes}"

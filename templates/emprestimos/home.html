@@ -10,7 +10,7 @@
             <h1>Tecnologia disponível quando você precisa.</h1>
             <p>Solicite equipamentos de TI para seu trabalho de forma simples e acompanhe a confirmação com a equipe responsável.</p>
             <a class="button" href="#solicitar">
-                Solicitar equipamento
+                Solicitar equipamentos
                 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
         </div>
@@ -24,7 +24,7 @@
     <div class="container">
         <div class="section-heading">
             <h2 id="equipamentos-title">Equipamentos disponíveis</h2>
-            <p>Escolha o item que melhor atende à sua necessidade de trabalho.</p>
+            <p>Escolha um ou mais itens para sua necessidade de trabalho.</p>
         </div>
 
         {% if equipamentos %}
@@ -62,7 +62,7 @@
         <ol class="steps-list">
             <li>
                 <span class="step-number">1</span>
-                <div><strong>Escolha</strong><p>Selecione o equipamento que atende à sua necessidade.</p></div>
+                <div><strong>Escolha</strong><p>Selecione os equipamentos que atendem à sua necessidade.</p></div>
             </li>
             <li>
                 <span class="step-number">2</span>
@@ -102,8 +102,16 @@
         <form method="post" class="request-form" novalidate>
             {% csrf_token %}
             {% for field in form %}
-                <div class="form-field">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="form-field {% if field.name == 'equipamentos' %}form-field-wide equipment-choice-field{% endif %}">
+                    {% if field.name == "equipamentos" %}
+                        <div class="equipment-choice-heading">
+                            <span class="field-label">{{ field.label }}</span>
+                            <span id="equipment-selection-count" aria-live="polite">0 equipamentos selecionados</span>
+                        </div>
+                        <p class="field-hint">Selecione um ou mais equipamentos.</p>
+                    {% else %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% endif %}
                     {{ field }}
                     {% if field.errors %}
                         <div class="field-errors" id="{{ field.id_for_label }}-error">

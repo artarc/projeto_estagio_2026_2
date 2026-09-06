@@ -15,6 +15,12 @@ class PaginaPublicaTests(TestCase):
             identificacao="NB-TESTE",
             ativo=True,
         )
+        self.monitor = Equipamento.objects.create(
+            nome="Monitor de teste",
+            tipo="Monitor",
+            identificacao="MON-TESTE",
+            ativo=True,
+        )
         self.inativo = Equipamento.objects.create(
             nome="Monitor inativo",
             tipo="Monitor",
@@ -25,7 +31,7 @@ class PaginaPublicaTests(TestCase):
         self.dados_validos = {
             "nome": "Ana Souza",
             "email": "ana@example.com",
-            "equipamento": self.equipamento.pk,
+            "equipamentos": [self.equipamento.pk, self.monitor.pk],
             "data_retirada": retirada,
             "data_devolucao": retirada + timedelta(days=2),
             "finalidade": "Apresentação para um cliente.",
@@ -45,6 +51,10 @@ class PaginaPublicaTests(TestCase):
         self.assertRedirects(response, f"{reverse('home')}#solicitar")
         solicitacao = SolicitacaoEmprestimo.objects.get()
         self.assertEqual(solicitacao.status, SolicitacaoEmprestimo.Status.PENDENTE)
+        self.assertSetEqual(
+            set(solicitacao.equipamentos.all()),
+            {self.equipamento, self.monitor},
+        )
 
     def test_rejeita_devolucao_anterior_a_retirada(self):
         dados = {
@@ -59,7 +69,7 @@ class PaginaPublicaTests(TestCase):
         self.assertFalse(SolicitacaoEmprestimo.objects.exists())
 
     def test_rejeita_equipamento_inativo(self):
-        dados = {**self.dados_validos, "equipamento": self.inativo.pk}
+        dados = {**self.dados_validos, "equipamentos": [self.inativo.pk]}
 
         response = self.client.post(reverse("home"), dados)
 
@@ -81,11 +91,11 @@ class DashboardTests(TestCase):
         self.solicitacao = SolicitacaoEmprestimo.objects.create(
             nome="Bruno Lima",
             email="bruno@example.com",
-            equipamento=self.equipamento,
             data_retirada=date.today() + timedelta(days=3),
             data_devolucao=date.today() + timedelta(days=4),
             finalidade="Apresentação interna.",
         )
+        self.solicitacao.equipamentos.add(self.equipamento)
 
     def test_dashboard_redireciona_visitante_para_login(self):
         response = self.client.get(reverse("dashboard"))
@@ -148,18 +158,31 @@ class ConflitoEmprestimoTests(TestCase):
             tipo="Notebook",
             identificacao="NB-CONFLITO",
         )
+        self.monitor = Equipamento.objects.create(
+            nome="Monitor",
+            tipo="Monitor",
+            identificacao="MON-CONFLITO",
+        )
         self.inicio = date.today() + timedelta(days=10)
 
-    def criar_solicitacao(self, inicio, fim, status="pendente", nome="Pessoa"):
-        return SolicitacaoEmprestimo.objects.create(
+    def criar_solicitacao(
+        self,
+        inicio,
+        fim,
+        status="pendente",
+        nome="Pessoa",
+        equipamentos=None,
+    ):
+        solicitacao = SolicitacaoEmprestimo.objects.create(
             nome=nome,
             email="pessoa@example.com",
-            equipamento=self.equipamento,
             data_retirada=inicio,
             data_devolucao=fim,
             finalidade="Trabalho temporário.",
             status=status,
         )
+        solicitacao.equipamentos.set(equipamentos or [self.equipamento])
+        return solicitacao
 
     def test_nao_confirma_periodo_sobreposto_inclusive(self):
         self.criar_solicitacao(
@@ -172,6 +195,7 @@ class ConflitoEmprestimoTests(TestCase):
             self.inicio + timedelta(days=2),
             self.inicio + timedelta(days=4),
             nome="Reserva conflitante",
+            equipamentos=[self.equipamento, self.monitor],
         )
 
         response = self.client.post(
@@ -181,7 +205,23 @@ class ConflitoEmprestimoTests(TestCase):
 
         conflitante.refresh_from_db()
         self.assertEqual(conflitante.status, SolicitacaoEmprestimo.Status.PENDENTE)
-        self.assertContains(response, "já está reservado nesse período")
+        self.assertContains(response, "já estão reservados nesse período")
+
+    def test_confirma_varios_equipamentos_sem_conflito(self):
+        nova = self.criar_solicitacao(
+            self.inicio,
+            self.inicio + timedelta(days=2),
+            equipamentos=[self.equipamento, self.monitor],
+        )
+
+        self.client.post(reverse("confirmar_solicitacao", args=[nova.pk]))
+
+        nova.refresh_from_db()
+        self.assertEqual(nova.status, SolicitacaoEmprestimo.Status.CONFIRMADO)
+        self.assertSetEqual(
+            set(nova.equipamentos.all()),
+            {self.equipamento, self.monitor},
+        )
 
     def test_solicitacao_pendente_nao_bloqueia_confirmacao(self):
         self.criar_solicitacao(

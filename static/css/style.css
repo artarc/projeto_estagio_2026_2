@@ -123,6 +123,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .form-field { min-width: 0; }
 .form-field-wide { grid-column: 1 / -1; }
 .form-field label { display: inline-block; margin-bottom: 8px; color: var(--navy-900); font-size: 14px; font-weight: 680; }
+.equipment-choice-field { padding: 18px; border: 1px solid var(--gray-200); border-radius: var(--radius); background: var(--gray-50); }
+.equipment-choice-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.field-label { color: var(--navy-900); font-size: 14px; font-weight: 680; }
+#equipment-selection-count { color: var(--cyan-700); font-size: 12px; font-weight: 700; }
+.field-hint { margin: 4px 0 13px; color: var(--gray-500); font-size: 12px; }
+.equipment-choice-field > div[id^="id_equipamentos"] { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.equipment-choice-field > div[id^="id_equipamentos"] > div { min-width: 0; }
+.equipment-choice-field > div[id^="id_equipamentos"] label { display: flex; min-height: 44px; align-items: center; gap: 9px; margin: 0; padding: 9px 11px; border: 1px solid #cbd7e2; border-radius: 8px; background: var(--white); cursor: pointer; font-size: 13px; font-weight: 600; }
+.equipment-choice-field input { width: 17px; height: 17px; margin: 0; accent-color: var(--cyan-700); }
 .form-control { width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid #cbd7e2; border-radius: 9px; background: var(--white); color: var(--navy-950); font-size: 15px; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .form-control:hover { border-color: #9eb2c4; }
 .form-control:focus { border-color: var(--cyan-700); box-shadow: 0 0 0 3px rgb(0 126 158 / 10%); outline: 0; }
@@ -190,6 +199,8 @@ textarea.form-control { min-height: 116px; resize: vertical; }
 .requests-table td strong, .requests-table td small { display: block; }
 .requests-table td strong { font-size: 13px; }
 .requests-table td small { margin-top: 2px; color: var(--gray-500); font-size: 11px; }
+.request-equipment-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.request-equipment-list li + li { padding-top: 7px; border-top: 1px solid var(--gray-200); }
 .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .status-badge::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
 .status-pendente { border-color: #efd99e; background: var(--amber-100); color: var(--amber-700); }
@@ -239,6 +250,8 @@ textarea.form-control { min-height: 116px; resize: vertical; }
     .request-section { padding: 56px 0 66px; }
     .request-form { grid-template-columns: 1fr; gap: 20px; }
     .form-field-wide { grid-column: auto; }
+    .equipment-choice-heading { align-items: flex-start; flex-direction: column; gap: 3px; }
+    .equipment-choice-field > div[id^="id_equipamentos"] { grid-template-columns: 1fr; }
     .form-actions { align-items: stretch; flex-direction: column; }
     .form-actions .button { width: 100%; }
     .footer-inner { align-items: flex-start; flex-direction: column; padding-block: 26px; }

@@ -11,7 +11,7 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
         fields = [
             "nome",
             "email",
-            "equipamento",
+            "equipamentos",
             "data_retirada",
             "data_devolucao",
             "finalidade",
@@ -23,6 +23,7 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
             "email": forms.EmailInput(
                 attrs={"placeholder": "seu.email@empresa.com", "autocomplete": "email"}
             ),
+            "equipamentos": forms.CheckboxSelectMultiple(),
             "data_retirada": forms.DateInput(attrs={"type": "date"}),
             "data_devolucao": forms.DateInput(attrs={"type": "date"}),
             "finalidade": forms.Textarea(
@@ -35,6 +36,7 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
         labels = {
             "nome": "Nome completo",
             "email": "E-mail",
+            "equipamentos": "Equipamentos",
             "data_retirada": "Data de retirada",
             "data_devolucao": "Data prevista de devolução",
             "finalidade": "Finalidade do empréstimo",
@@ -42,15 +44,16 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["equipamento"].queryset = Equipamento.objects.filter(
+        self.fields["equipamentos"].queryset = Equipamento.objects.filter(
             ativo=True
         ).order_by("pk")
-        self.fields["equipamento"].empty_label = "Selecione um equipamento"
         minimum_date = date.today().isoformat()
         self.fields["data_retirada"].widget.attrs["min"] = minimum_date
         self.fields["data_devolucao"].widget.attrs["min"] = minimum_date
 
-        for field in self.fields.values():
+        for field_name, field in self.fields.items():
+            if field_name == "equipamentos":
+                continue
             field.widget.attrs["class"] = "form-control"
 
     def clean_nome(self):
@@ -69,7 +72,7 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
         cleaned_data = super().clean()
         retirada = cleaned_data.get("data_retirada")
         devolucao = cleaned_data.get("data_devolucao")
-        equipamento = cleaned_data.get("equipamento")
+        equipamentos = cleaned_data.get("equipamentos")
 
         if retirada and devolucao and devolucao < retirada:
             self.add_error(
@@ -77,10 +80,10 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
                 "A devolução não pode ser anterior à retirada.",
             )
 
-        if equipamento and not equipamento.ativo:
+        if equipamentos and equipamentos.filter(ativo=False).exists():
             self.add_error(
-                "equipamento",
-                "Este equipamento não está disponível para solicitação.",
+                "equipamentos",
+                "Um dos equipamentos selecionados não está disponível para solicitação.",
             )
 
         return cleaned_data

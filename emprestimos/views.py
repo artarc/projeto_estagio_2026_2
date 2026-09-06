@@ -36,15 +36,15 @@ def home(request):
 
 @login_required
 def dashboard(request):
-    solicitacoes = SolicitacaoEmprestimo.objects.select_related("equipamento")
+    solicitacoes = SolicitacaoEmprestimo.objects.prefetch_related("equipamentos")
     pesquisa = request.GET.get("q", "").strip()
     status = request.GET.get("status", "")
     status_validos = {valor for valor, _ in SolicitacaoEmprestimo.Status.choices}
 
     if pesquisa:
         solicitacoes = solicitacoes.filter(
-            Q(nome__icontains=pesquisa) | Q(equipamento__nome__icontains=pesquisa)
-        )
+            Q(nome__icontains=pesquisa) | Q(equipamentos__nome__icontains=pesquisa)
+        ).distinct()
 
     if status in status_validos:
         solicitacoes = solicitacoes.filter(status=status)
@@ -89,7 +89,7 @@ def confirmar_solicitacao(request, pk):
         except ValidationError:
             messages.error(
                 request,
-                "Não foi possível confirmar: o equipamento já está reservado nesse período.",
+                "Não foi possível confirmar: um ou mais equipamentos já estão reservados nesse período.",
             )
         else:
             if alterada:
