@@ -13,7 +13,9 @@ from .models import Equipamento, SolicitacaoEmprestimo
 
 
 def home(request):
-    equipamentos = Equipamento.objects.filter(ativo=True).order_by("pk")
+    equipamentos = list(
+        Equipamento.objects.com_disponibilidade().filter(ativo=True).order_by("pk")
+    )
 
     if request.method == "POST":
         form = SolicitacaoEmprestimoForm(request.POST)
@@ -42,6 +44,10 @@ def home(request):
             "form": form,
             "equipamentos": equipamentos,
             "equipamentos_selecionados": equipamentos_selecionados,
+            "tem_equipamentos_disponiveis": any(
+                equipamento.quantidade_disponivel > 0
+                for equipamento in equipamentos
+            ),
         },
     )
 
@@ -49,6 +55,9 @@ def home(request):
 @login_required
 def dashboard(request):
     solicitacoes = SolicitacaoEmprestimo.objects.prefetch_related("equipamentos")
+    equipamentos = Equipamento.objects.com_disponibilidade().filter(
+        ativo=True
+    ).order_by("pk")
     pesquisa = request.GET.get("q", "").strip()
     status = request.GET.get("status", "")
     status_validos = {valor for valor, _ in SolicitacaoEmprestimo.Status.choices}
@@ -80,6 +89,7 @@ def dashboard(request):
         "emprestimos/dashboard.html",
         {
             "solicitacoes": solicitacoes,
+            "equipamentos": equipamentos,
             "contadores": contadores,
             "pesquisa": pesquisa,
             "status_selecionado": status,
@@ -96,12 +106,14 @@ def confirmar_solicitacao(request, pk):
             SolicitacaoEmprestimo.objects.select_for_update(),
             pk=pk,
         )
+        # Mantém a verificação do estoque e a confirmação na mesma seção crítica.
+        list(solicitacao.equipamentos.select_for_update())
         try:
             alterada = solicitacao.confirmar()
         except ValidationError:
             messages.error(
                 request,
-                "Não foi possível confirmar: um ou mais equipamentos já estão reservados nesse período.",
+                "Não foi possível confirmar: um ou mais equipamentos não possuem unidades disponíveis nesse período.",
             )
         else:
             if alterada:

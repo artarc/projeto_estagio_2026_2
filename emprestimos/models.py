@@ -1,13 +1,40 @@
+from datetime import date
+
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, F, IntegerField, Q, Value
+from django.db.models.functions import Greatest
+
+
+class EquipamentoQuerySet(models.QuerySet):
+    def com_disponibilidade(self, data_referencia=None):
+        data_referencia = data_referencia or date.today()
+        return self.annotate(
+            quantidade_reservada=Count(
+                "solicitacoes",
+                filter=Q(
+                    solicitacoes__status=SolicitacaoEmprestimo.Status.CONFIRMADO,
+                    solicitacoes__data_devolucao__gte=data_referencia,
+                ),
+                distinct=True,
+            )
+        ).annotate(
+            quantidade_disponivel=Greatest(
+                F("quantidade_total") - F("quantidade_reservada"),
+                Value(0),
+                output_field=IntegerField(),
+            )
+        )
 
 
 class Equipamento(models.Model):
     nome = models.CharField(max_length=120)
     tipo = models.CharField(max_length=80)
     identificacao = models.CharField(max_length=40, unique=True)
+    quantidade_total = models.PositiveIntegerField(default=5)
     ativo = models.BooleanField(default=True)
+
+    objects = EquipamentoQuerySet.as_manager()
 
     class Meta:
         ordering = ["tipo", "nome"]
@@ -63,19 +90,25 @@ class SolicitacaoEmprestimo(models.Model):
             )
 
     def tem_conflito_confirmado(self):
-        return SolicitacaoEmprestimo.objects.filter(
-            equipamentos__in=self.equipamentos.all(),
-            status=self.Status.CONFIRMADO,
-            data_retirada__lte=self.data_devolucao,
-            data_devolucao__gte=self.data_retirada,
-        ).exclude(pk=self.pk).distinct().exists()
+        for equipamento in self.equipamentos.all():
+            reservas_no_periodo = SolicitacaoEmprestimo.objects.filter(
+                equipamentos=equipamento,
+                status=self.Status.CONFIRMADO,
+                data_retirada__lte=self.data_devolucao,
+                data_devolucao__gte=self.data_retirada,
+            ).exclude(pk=self.pk).count()
+
+            if reservas_no_periodo >= equipamento.quantidade_total:
+                return True
+
+        return False
 
     def confirmar(self):
         if self.status != self.Status.PENDENTE:
             return False
         if self.tem_conflito_confirmado():
             raise ValidationError(
-                "Um ou mais equipamentos já estão reservados nesse período."
+                "Um ou mais equipamentos não possuem unidades disponíveis nesse período."
             )
         self.status = self.Status.CONFIRMADO
         self.save(update_fields=["status"])

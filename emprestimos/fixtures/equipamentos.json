@@ -6,6 +6,7 @@
       "nome": "Notebook Dell",
       "tipo": "Notebook",
       "identificacao": "NB-DELL-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   },
@@ -16,6 +17,7 @@
       "nome": "Notebook Lenovo",
       "tipo": "Notebook",
       "identificacao": "NB-LENOVO-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   },
@@ -26,6 +28,7 @@
       "nome": "Monitor 24 polegadas",
       "tipo": "Monitor",
       "identificacao": "MON-24-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   },
@@ -36,6 +39,7 @@
       "nome": "Projetor",
       "tipo": "Audiovisual",
       "identificacao": "PROJ-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   },
@@ -46,6 +50,7 @@
       "nome": "Headset",
       "tipo": "Periférico",
       "identificacao": "HEAD-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   },
@@ -56,8 +61,8 @@
       "nome": "Kit teclado e mouse",
       "tipo": "Periférico",
       "identificacao": "KIT-001",
+      "quantidade_total": 5,
       "ativo": true
     }
   }
 ]
-

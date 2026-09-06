@@ -44,9 +44,14 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["equipamentos"].queryset = Equipamento.objects.filter(
-            ativo=True
-        ).order_by("pk")
+        self.fields["equipamentos"].queryset = (
+            Equipamento.objects.com_disponibilidade()
+            .filter(ativo=True, quantidade_disponivel__gt=0)
+            .order_by("pk")
+        )
+        self.fields["equipamentos"].error_messages["invalid_choice"] = (
+            "Um dos equipamentos selecionados não está disponível no momento."
+        )
         minimum_date = date.today().isoformat()
         self.fields["data_retirada"].widget.attrs["min"] = minimum_date
         self.fields["data_devolucao"].widget.attrs["min"] = minimum_date

@@ -42,6 +42,10 @@ class PaginaPublicaTests(TestCase):
 
         self.assertContains(response, self.equipamento.nome)
         self.assertNotContains(response, self.inativo.nome)
+        self.assertContains(response, "Disponível")
+
+    def test_equipamento_tem_cinco_unidades_por_padrao(self):
+        self.assertEqual(self.equipamento.quantidade_total, 5)
 
     def test_solicitacao_valida_nasce_pendente(self):
         dados = {**self.dados_validos, "status": "confirmado"}
@@ -80,6 +84,34 @@ class PaginaPublicaTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(SolicitacaoEmprestimo.objects.exists())
 
+    def test_home_desabilita_equipamento_sem_estoque(self):
+        for indice in range(5):
+            solicitacao = SolicitacaoEmprestimo.objects.create(
+                nome=f"Pessoa {indice}",
+                email=f"pessoa{indice}@example.com",
+                data_retirada=self.dados_validos["data_retirada"],
+                data_devolucao=self.dados_validos["data_devolucao"],
+                finalidade="Trabalho temporário.",
+                status=SolicitacaoEmprestimo.Status.CONFIRMADO,
+            )
+            solicitacao.equipamentos.add(self.equipamento)
+
+        response = self.client.get(reverse("home"))
+
+        self.assertContains(response, "Indisponível")
+        self.assertContains(response, 'class="equipment-option is-unavailable"')
+        self.assertContains(response, "disabled aria-disabled=\"true\"")
+
+        dados = {**self.dados_validos, "equipamentos": [self.equipamento.pk]}
+        response = self.client.post(reverse("home"), dados)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "Um dos equipamentos selecionados não está disponível no momento.",
+        )
+        self.assertEqual(SolicitacaoEmprestimo.objects.count(), 5)
+
 
 class DashboardTests(TestCase):
     def setUp(self):
@@ -114,6 +146,23 @@ class DashboardTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Bruno Lima")
         self.assertContains(response, "bruno@example.com")
+        self.assertContains(response, "<b>5</b> de 5 disponíveis", html=True)
+
+    def test_confirmacao_abate_estoque_exibido_no_dashboard(self):
+        self.client.force_login(self.usuario)
+
+        self.client.post(
+            reverse("confirmar_solicitacao", args=[self.solicitacao.pk])
+        )
+        response = self.client.get(reverse("dashboard"))
+
+        self.assertContains(response, "<b>4</b> de 5 disponíveis", html=True)
+        equipamento = next(
+            item
+            for item in response.context["equipamentos"]
+            if item.pk == self.equipamento.pk
+        )
+        self.assertEqual(equipamento.quantidade_disponivel, 4)
 
     def test_dashboard_filtra_por_status_e_pesquisa(self):
         self.client.force_login(self.usuario)
@@ -161,6 +210,7 @@ class ConflitoEmprestimoTests(TestCase):
             nome="Notebook Dell",
             tipo="Notebook",
             identificacao="NB-CONFLITO",
+            quantidade_total=1,
         )
         self.monitor = Equipamento.objects.create(
             nome="Monitor",
@@ -209,7 +259,7 @@ class ConflitoEmprestimoTests(TestCase):
 
         conflitante.refresh_from_db()
         self.assertEqual(conflitante.status, SolicitacaoEmprestimo.Status.PENDENTE)
-        self.assertContains(response, "já estão reservados nesse período")
+        self.assertContains(response, "não possuem unidades disponíveis nesse período")
 
     def test_confirma_varios_equipamentos_sem_conflito(self):
         nova = self.criar_solicitacao(
@@ -243,6 +293,71 @@ class ConflitoEmprestimoTests(TestCase):
 
         nova.refresh_from_db()
         self.assertEqual(nova.status, SolicitacaoEmprestimo.Status.CONFIRMADO)
+
+    def test_confirma_solicitacoes_ate_atingir_a_quantidade_total(self):
+        equipamento = Equipamento.objects.create(
+            nome="Headset",
+            tipo="Periférico",
+            identificacao="HEAD-ESTOQUE",
+            quantidade_total=5,
+        )
+        for indice in range(4):
+            self.criar_solicitacao(
+                self.inicio,
+                self.inicio + timedelta(days=2),
+                status=SolicitacaoEmprestimo.Status.CONFIRMADO,
+                nome=f"Reserva {indice}",
+                equipamentos=[equipamento],
+            )
+        quinta = self.criar_solicitacao(
+            self.inicio,
+            self.inicio + timedelta(days=2),
+            nome="Quinta reserva",
+            equipamentos=[equipamento],
+        )
+
+        self.client.post(reverse("confirmar_solicitacao", args=[quinta.pk]))
+
+        quinta.refresh_from_db()
+        self.assertEqual(quinta.status, SolicitacaoEmprestimo.Status.CONFIRMADO)
+
+        sexta = self.criar_solicitacao(
+            self.inicio,
+            self.inicio + timedelta(days=2),
+            nome="Sexta reserva",
+            equipamentos=[equipamento],
+        )
+        response = self.client.post(
+            reverse("confirmar_solicitacao", args=[sexta.pk]),
+            follow=True,
+        )
+
+        sexta.refresh_from_db()
+        self.assertEqual(sexta.status, SolicitacaoEmprestimo.Status.PENDENTE)
+        self.assertContains(response, "não possuem unidades disponíveis nesse período")
+
+    def test_reserva_com_devolucao_passada_libera_estoque_atual(self):
+        equipamento = Equipamento.objects.create(
+            nome="Kit de teste",
+            tipo="Periférico",
+            identificacao="KIT-LIBERADO",
+            quantidade_total=1,
+        )
+        reserva_passada = SolicitacaoEmprestimo.objects.create(
+            nome="Reserva encerrada",
+            email="encerrada@example.com",
+            data_retirada=date.today() - timedelta(days=3),
+            data_devolucao=date.today() - timedelta(days=1),
+            finalidade="Trabalho concluído.",
+            status=SolicitacaoEmprestimo.Status.CONFIRMADO,
+        )
+        reserva_passada.equipamentos.add(equipamento)
+
+        disponibilidade = Equipamento.objects.com_disponibilidade().get(
+            pk=equipamento.pk
+        )
+
+        self.assertEqual(disponibilidade.quantidade_disponivel, 1)
 
     def test_acao_de_confirmar_aceita_apenas_post(self):
         solicitacao = self.criar_solicitacao(
