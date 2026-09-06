@@ -9,9 +9,11 @@ Projeto desenvolvido para o teste técnico de Estágio em Tecnologia — Desenvo
 - página pública responsiva com catálogo de equipamentos ativos;
 - formulário com seletor visual por ícones para um ou mais equipamentos, validação no backend e novas solicitações sempre como `pendente`;
 - login e logout usando a autenticação nativa do Django;
-- dashboard protegido com contadores, listagem, busca e filtro por status;
+- dashboard protegido com contadores de estoque e solicitações, listagem, busca e filtro por status;
 - confirmação e cancelamento de solicitações pendentes;
-- bloqueio da confirmação quando qualquer equipamento solicitado conflita com um período já confirmado;
+- estoque inicial de cinco unidades por equipamento, reduzido por solicitações confirmadas e liberado após a devolução prevista;
+- bloqueio da confirmação quando a quantidade disponível de qualquer equipamento solicitado se esgota no período;
+- indicação visual de disponibilidade na página pública;
 - estado vazio e feedback visual para ações e erros;
 - fixture com seis equipamentos iniciais;
 - execução local ou com Docker.
@@ -149,7 +151,7 @@ Não use os valores de desenvolvimento em produção.
 3. Confirme que o feedback de sucesso é exibido.
 4. Em uma sessão anônima, acesse `/dashboard/` e confirme o redirecionamento para `/login/`.
 5. Entre com o superusuário e confirme ou cancele uma pendência.
-6. Para validar o conflito, confirme uma solicitação e tente confirmar outra que contenha ao menos um dos mesmos equipamentos em datas sobrepostas. A segunda continuará pendente por inteiro.
+6. Para validar o estoque, confirme solicitações sobrepostas até ocupar as cinco unidades de um equipamento. Uma sexta solicitação para o mesmo período continuará pendente por inteiro.
 7. Teste a busca por nome/equipamento e o filtro por status.
 
 ## Testes automatizados
@@ -158,7 +160,7 @@ Não use os valores de desenvolvimento em produção.
 python manage.py test
 ```
 
-Os testes cobrem seleção múltipla, formulário público, equipamentos inativos, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, restrição de método HTTP e conflitos de período.
+Os testes cobrem seleção múltipla, formulário público, equipamentos inativos e indisponíveis, estoque, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, restrição de método HTTP e conflitos de período.
 
 ## Decisões
 

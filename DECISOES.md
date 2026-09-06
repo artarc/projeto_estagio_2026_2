@@ -20,6 +20,8 @@ O AssetFlow possui apenas o model necessário para identificar e selecionar equi
 
 Uma solicitação pode reunir vários equipamentos com o mesmo período e finalidade. A relação muitos-para-muitos evita duplicar os dados da pessoa solicitante e mantém a análise do conjunto em uma única ação. A migration converte automaticamente o equipamento das solicitações antigas para essa nova relação.
 
+Cada item do catálogo representa um tipo de equipamento e começa com cinco unidades. O painel exibe o total e a quantidade disponível usando os mesmos ícones da página pública. Uma solicitação confirmada consome uma unidade de cada equipamento selecionado; quando a data prevista de devolução fica no passado, a unidade volta automaticamente ao contador. Não foi criado um fluxo separado de devolução física para manter o escopo simples.
+
 ## Status e acesso ao painel
 
 Toda solicitação pública nasce como `pendente`; o campo de status não faz parte do formulário. Confirmar e cancelar são ações via POST e protegidas por login e CSRF. Para manter as permissões simples, qualquer usuário autenticado acessa o painel; o README orienta criar um superusuário para a avaliação.
@@ -30,7 +32,7 @@ Confirmação e cancelamento são transições finais neste escopo. Reabrir soli
 
 Períodos são inclusivos: se uma reserva termina no dia em que outra começa, há conflito, pois o equipamento ainda está emprestado nessa data. A verificação usa a condição direta `início existente <= fim novo` e `fim existente >= início novo`.
 
-Somente solicitações confirmadas bloqueiam outra confirmação. Pendências podem se sobrepor para que o gestor decida qual atender. Quando uma solicitação possui vários equipamentos, o conflito de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. Em caso de conflito, a solicitação permanece pendente e uma mensagem explica o motivo. A retirada no formulário público também não pode estar no passado.
+Somente solicitações confirmadas consomem estoque. Pendências podem se sobrepor para que o gestor decida quais atender. A confirmação é permitida enquanto a quantidade de reservas sobrepostas for menor que o estoque total do equipamento. Quando uma solicitação possui vários equipamentos, a falta de estoque de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. Em caso de indisponibilidade, a solicitação permanece pendente e uma mensagem explica o motivo. A retirada no formulário público também não pode estar no passado.
 
 ## Ordenação, filtros e estado vazio
 
@@ -38,7 +40,7 @@ A listagem é ordenada pela data de retirada e, em empate, pela criação. A bus
 
 ## Interface
 
-A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para atualizar o estado e o contador da seleção múltipla. Os cards com ícones são os próprios checkboxes do formulário, evitando repetir o catálogo em outro controle. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
+A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para atualizar o estado e o contador da seleção múltipla. Os cards com ícones são os próprios checkboxes do formulário, evitando repetir o catálogo em outro controle. Um fragmento de template centraliza os ícones usados na home e no painel para manter os desenhos idênticos. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
 
 ## Docker
 
@@ -46,7 +48,7 @@ O Docker padroniza a execução, mas mantém apenas um serviço web. O banco SQL
 
 ## Cortes de escopo
 
-Ficaram conscientemente fora: CRUD de equipamentos, inventário e estoque completos, fornecedores, clientes, notificações por e-mail, recuperação de senha personalizada, níveis complexos de permissão, API REST, integrações externas, relatórios avançados, multiempresa e atualização em tempo real.
+Ficaram conscientemente fora: CRUD de equipamentos, movimentações manuais e histórico detalhado de estoque, fornecedores, clientes, notificações por e-mail, recuperação de senha personalizada, níveis complexos de permissão, API REST, integrações externas, relatórios avançados, multiempresa e atualização em tempo real.
 
 ## Uso de IA — preencher antes da entrega
 

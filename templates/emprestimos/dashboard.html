@@ -16,6 +16,36 @@
         {% endfor %}
     {% endif %}
 
+    <section class="inventory-section" aria-labelledby="inventory-title">
+        <div class="inventory-heading">
+            <div>
+                <h2 id="inventory-title">Disponibilidade dos equipamentos</h2>
+                <p>Estoque atualizado após as solicitações confirmadas.</p>
+            </div>
+            <span>Estoque inicial: 5 por item</span>
+        </div>
+        <div class="inventory-grid">
+            {% for equipamento in equipamentos %}
+                <article class="inventory-card{% if equipamento.quantidade_disponivel == 0 %} is-unavailable{% endif %}">
+                    <span class="equipment-icon" aria-hidden="true">
+                        {% include "emprestimos/_equipment_icon.html" %}
+                    </span>
+                    <div class="inventory-card-content">
+                        <strong>{{ equipamento.nome }}</strong>
+                        <span class="inventory-count"><b>{{ equipamento.quantidade_disponivel }}</b> de {{ equipamento.quantidade_total }} disponíveis</span>
+                        {% if equipamento.quantidade_disponivel > 0 %}
+                            <span class="availability-flag availability-available">Disponível</span>
+                        {% else %}
+                            <span class="availability-flag availability-unavailable">Indisponível</span>
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <p class="empty-inline">Nenhum equipamento ativo cadastrado.</p>
+            {% endfor %}
+        </div>
+    </section>
+
     <section class="summary-grid" aria-label="Resumo das solicitações">
         <article class="summary-card summary-pending">
             <span class="summary-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
