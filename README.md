@@ -10,7 +10,8 @@ Projeto desenvolvido para o teste técnico de Estágio em Tecnologia — Desenvo
 - formulário com seletor visual por ícones para um ou mais equipamentos, validação no backend e novas solicitações sempre como `pendente`;
 - login e logout usando a autenticação nativa do Django;
 - dashboard protegido com contadores de estoque e solicitações, listagem, busca e filtro por status;
-- confirmação e cancelamento de solicitações pendentes;
+- confirmação, cancelamento e exclusão de solicitações no painel;
+- devolução imediata ao estoque quando uma solicitação confirmada é excluída;
 - estoque inicial de cinco unidades por equipamento, reduzido por solicitações confirmadas e liberado após a devolução prevista;
 - bloqueio da confirmação quando a quantidade disponível de qualquer equipamento solicitado se esgota no período;
 - indicação visual de disponibilidade na página pública;
@@ -150,7 +151,7 @@ Não use os valores de desenvolvimento em produção.
 2. Acesse `/`, selecione dois ou mais equipamentos e envie uma única solicitação.
 3. Confirme que o feedback de sucesso é exibido.
 4. Em uma sessão anônima, acesse `/dashboard/` e confirme o redirecionamento para `/login/`.
-5. Entre com o superusuário e confirme ou cancele uma pendência.
+5. Entre com o superusuário e confirme, cancele ou exclua uma solicitação. A exclusão de uma solicitação confirmada devolve seus equipamentos ao estoque.
 6. Para validar o estoque, confirme solicitações sobrepostas até ocupar as cinco unidades de um equipamento. Uma sexta solicitação para o mesmo período continuará pendente por inteiro.
 7. Teste a busca por nome/equipamento e o filtro por status.
 
@@ -160,7 +161,7 @@ Não use os valores de desenvolvimento em produção.
 python manage.py test
 ```
 
-Os testes cobrem seleção múltipla, formulário público, equipamentos inativos e indisponíveis, estoque, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, restrição de método HTTP e conflitos de período.
+Os testes cobrem seleção múltipla, formulário público, equipamentos inativos e indisponíveis, estoque, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, exclusão, restrição de método HTTP e conflitos de período.
 
 ## Decisões
 

@@ -140,6 +140,32 @@ def cancelar_solicitacao(request, pk):
     return _redirecionar_para_dashboard(request)
 
 
+@login_required
+@require_POST
+def excluir_solicitacao(request, pk):
+    with transaction.atomic():
+        solicitacao = get_object_or_404(
+            SolicitacaoEmprestimo.objects.select_for_update(),
+            pk=pk,
+        )
+        estava_confirmada = (
+            solicitacao.status == SolicitacaoEmprestimo.Status.CONFIRMADO
+        )
+        if estava_confirmada:
+            list(solicitacao.equipamentos.select_for_update())
+        solicitacao.delete()
+
+    if estava_confirmada:
+        messages.success(
+            request,
+            "Solicitação excluída. O estoque dos equipamentos foi atualizado.",
+        )
+    else:
+        messages.success(request, "Solicitação excluída com sucesso.")
+
+    return _redirecionar_para_dashboard(request)
+
+
 def _redirecionar_para_dashboard(request):
     destino = request.POST.get("next", "")
     if destino and url_has_allowed_host_and_scheme(

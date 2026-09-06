@@ -147,6 +147,7 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Bruno Lima")
         self.assertContains(response, "bruno@example.com")
         self.assertContains(response, "<b>5</b> de 5 disponíveis", html=True)
+        self.assertContains(response, "Excluir")
 
     def test_confirmacao_abate_estoque_exibido_no_dashboard(self):
         self.client.force_login(self.usuario)
@@ -197,6 +198,61 @@ class DashboardTests(TestCase):
         )
 
         self.assertRedirects(response, destino)
+
+    def test_exclusao_exige_login_e_aceita_apenas_post(self):
+        url = reverse("excluir_solicitacao", args=[self.solicitacao.pk])
+
+        response = self.client.post(url)
+        self.assertRedirects(response, f"{reverse('login')}?next={url}")
+
+        self.client.force_login(self.usuario)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(
+            SolicitacaoEmprestimo.objects.filter(pk=self.solicitacao.pk).exists()
+        )
+
+    def test_exclusao_confirmada_devolve_equipamento_ao_estoque(self):
+        self.solicitacao.status = SolicitacaoEmprestimo.Status.CONFIRMADO
+        self.solicitacao.save(update_fields=["status"])
+        self.client.force_login(self.usuario)
+
+        disponibilidade_antes = Equipamento.objects.com_disponibilidade().get(
+            pk=self.equipamento.pk
+        )
+        self.assertEqual(disponibilidade_antes.quantidade_disponivel, 4)
+
+        response = self.client.post(
+            reverse("excluir_solicitacao", args=[self.solicitacao.pk]),
+            follow=True,
+        )
+
+        self.assertFalse(
+            SolicitacaoEmprestimo.objects.filter(pk=self.solicitacao.pk).exists()
+        )
+        equipamento = next(
+            item
+            for item in response.context["equipamentos"]
+            if item.pk == self.equipamento.pk
+        )
+        self.assertEqual(equipamento.quantidade_disponivel, 5)
+        self.assertContains(
+            response,
+            "Solicitação excluída. O estoque dos equipamentos foi atualizado.",
+        )
+
+    def test_exclusao_preserva_filtros_do_dashboard(self):
+        self.client.force_login(self.usuario)
+        destino = f"{reverse('dashboard')}?q=Bruno&status=pendente"
+
+        response = self.client.post(
+            reverse("excluir_solicitacao", args=[self.solicitacao.pk]),
+            {"next": destino},
+        )
+
+        self.assertRedirects(response, destino)
+        self.assertFalse(SolicitacaoEmprestimo.objects.exists())
 
 
 class ConflitoEmprestimoTests(TestCase):

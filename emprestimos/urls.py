@@ -18,6 +18,11 @@ urlpatterns = [
         name="cancelar_solicitacao",
     ),
     path(
+        "dashboard/solicitacoes/<int:pk>/excluir/",
+        views.excluir_solicitacao,
+        name="excluir_solicitacao",
+    ),
+    path(
         "login/",
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="login",

@@ -114,8 +114,8 @@
                                 <td data-label="Status"><span class="status-badge status-{{ solicitacao.status }}">{{ solicitacao.get_status_display }}</span></td>
                                 <td data-label="Recebida em">{{ solicitacao.criado_em|date:"d M Y H:i" }}</td>
                                 <td data-label="Ações">
-                                    {% if solicitacao.status == "pendente" %}
-                                        <div class="row-actions">
+                                    <div class="row-actions">
+                                        {% if solicitacao.status == "pendente" %}
                                             <form method="post" action="{% url 'confirmar_solicitacao' solicitacao.pk %}">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
@@ -126,10 +126,18 @@
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                                 <button class="action-button action-cancel" type="submit">Cancelar</button>
                                             </form>
-                                        </div>
-                                    {% else %}
-                                        <span class="no-action">—</span>
-                                    {% endif %}
+                                        {% endif %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'excluir_solicitacao' solicitacao.pk %}"
+                                            class="delete-request-form"
+                                            data-request-name="{{ solicitacao.nome }}"
+                                        >
+                                            {% csrf_token %}
+                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                            <button class="action-button action-delete" type="submit">Excluir</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         {% endfor %}
