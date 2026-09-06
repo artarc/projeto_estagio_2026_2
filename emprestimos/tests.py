@@ -66,6 +66,10 @@ class PaginaPublicaTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "A devolução não pode ser anterior à retirada.")
+        self.assertSetEqual(
+            set(response.context["equipamentos_selecionados"]),
+            {self.equipamento.pk, self.monitor.pk},
+        )
         self.assertFalse(SolicitacaoEmprestimo.objects.exists())
 
     def test_rejeita_equipamento_inativo(self):

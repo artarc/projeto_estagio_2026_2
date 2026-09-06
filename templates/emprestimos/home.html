@@ -20,42 +20,6 @@
     </div>
 </section>
 
-<section class="equipment-section" aria-labelledby="equipamentos-title">
-    <div class="container">
-        <div class="section-heading">
-            <h2 id="equipamentos-title">Equipamentos disponíveis</h2>
-            <p>Escolha um ou mais itens para sua necessidade de trabalho.</p>
-        </div>
-
-        {% if equipamentos %}
-            <div class="equipment-list" role="list">
-                {% for equipamento in equipamentos %}
-                    <button class="equipment-item" type="button" data-equipment-id="{{ equipamento.pk }}" role="listitem">
-                        <span class="equipment-icon" aria-hidden="true">
-                            {% if equipamento.tipo == "Notebook" %}
-                                <svg viewBox="0 0 48 48"><rect x="10" y="8" width="28" height="22" rx="2"/><path d="M5 36h38l-3 4H8l-3-4Z"/></svg>
-                            {% elif equipamento.tipo == "Monitor" %}
-                                <svg viewBox="0 0 48 48"><rect x="6" y="7" width="36" height="25" rx="2"/><path d="M24 32v8M16 40h16"/></svg>
-                            {% elif equipamento.tipo == "Audiovisual" %}
-                                <svg viewBox="0 0 48 48"><rect x="6" y="13" width="36" height="22" rx="4"/><circle cx="33" cy="24" r="7"/><path d="M11 19h8M11 24h6M11 29h8"/></svg>
-                            {% elif "Kit" in equipamento.nome %}
-                                <svg viewBox="0 0 48 48"><rect x="5" y="17" width="27" height="17" rx="2"/><path d="M9 22h2m3 0h2m3 0h2m3 0h2M9 27h2m3 0h2m3 0h7M36 17h7v20h-7a4 4 0 0 1-4-4V21a4 4 0 0 1 4-4Z"/></svg>
-                            {% else %}
-                                <svg viewBox="0 0 48 48"><path d="M12 30v-8a12 12 0 0 1 24 0v8"/><rect x="7" y="25" width="8" height="14" rx="3"/><rect x="33" y="25" width="8" height="14" rx="3"/></svg>
-                            {% endif %}
-                        </span>
-                        <strong>{{ equipamento.nome }}</strong>
-                        <small>{{ equipamento.identificacao }}</small>
-                        <span class="selected-check" aria-hidden="true">✓</span>
-                    </button>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="empty-inline">Nenhum equipamento está disponível no momento.</p>
-        {% endif %}
-    </div>
-</section>
-
 <section class="steps-section" id="como-funciona" aria-labelledby="steps-title">
     <div class="container">
         <h2 class="sr-only" id="steps-title">Como funciona</h2>
@@ -80,7 +44,7 @@
     <div class="container request-container">
         <div class="section-heading">
             <h2 id="request-title">Faça sua solicitação</h2>
-            <p>Preencha os dados abaixo. Todos os campos são obrigatórios.</p>
+            <p>Escolha os equipamentos e informe os dados do empréstimo.</p>
         </div>
 
         {% if messages %}
@@ -101,24 +65,71 @@
 
         <form method="post" class="request-form" novalidate>
             {% csrf_token %}
-            {% for field in form %}
-                <div class="form-field {% if field.name == 'equipamentos' %}form-field-wide equipment-choice-field{% endif %}">
-                    {% if field.name == "equipamentos" %}
-                        <div class="equipment-choice-heading">
-                            <span class="field-label">{{ field.label }}</span>
-                            <span id="equipment-selection-count" aria-live="polite">0 equipamentos selecionados</span>
-                        </div>
-                        <p class="field-hint">Selecione um ou mais equipamentos.</p>
-                    {% else %}
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {% endif %}
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="field-errors" id="{{ field.id_for_label }}-error">
-                            {% for error in field.errors %}<p>{{ error }}</p>{% endfor %}
-                        </div>
-                    {% endif %}
+            <fieldset class="equipment-picker form-field-wide">
+                <legend>Equipamentos disponíveis</legend>
+                <div class="equipment-picker-heading">
+                    <p>Selecione um ou mais itens para sua necessidade de trabalho.</p>
+                    <span id="equipment-selection-count" aria-live="polite">0 selecionados</span>
                 </div>
+
+                {% if equipamentos %}
+                    <div class="equipment-options">
+                        {% for equipamento in equipamentos %}
+                            <label class="equipment-option" data-equipment-id="{{ equipamento.pk }}">
+                                <input
+                                    type="checkbox"
+                                    name="equipamentos"
+                                    value="{{ equipamento.pk }}"
+                                    {% if equipamento.pk in equipamentos_selecionados %}checked{% endif %}
+                                    {% if form.equipamentos.errors %}aria-describedby="id_equipamentos-error"{% endif %}
+                                >
+                                <span class="equipment-icon" aria-hidden="true">
+                                    {% if equipamento.tipo == "Notebook" %}
+                                        <svg viewBox="0 0 48 48"><rect x="10" y="8" width="28" height="22" rx="2"/><path d="M5 36h38l-3 4H8l-3-4Z"/></svg>
+                                    {% elif equipamento.tipo == "Monitor" %}
+                                        <svg viewBox="0 0 48 48"><rect x="6" y="7" width="36" height="25" rx="2"/><path d="M24 32v8M16 40h16"/></svg>
+                                    {% elif equipamento.tipo == "Audiovisual" %}
+                                        <svg viewBox="0 0 48 48"><rect x="6" y="13" width="36" height="22" rx="4"/><circle cx="33" cy="24" r="7"/><path d="M11 19h8M11 24h6M11 29h8"/></svg>
+                                    {% elif "Kit" in equipamento.nome %}
+                                        <svg viewBox="0 0 48 48"><rect x="5" y="17" width="27" height="17" rx="2"/><path d="M9 22h2m3 0h2m3 0h2m3 0h2M9 27h2m3 0h2m3 0h7M36 17h7v20h-7a4 4 0 0 1-4-4V21a4 4 0 0 1 4-4Z"/></svg>
+                                    {% else %}
+                                        <svg viewBox="0 0 48 48"><path d="M12 30v-8a12 12 0 0 1 24 0v8"/><rect x="7" y="25" width="8" height="14" rx="3"/><rect x="33" y="25" width="8" height="14" rx="3"/></svg>
+                                    {% endif %}
+                                </span>
+                                <strong>{{ equipamento.nome }}</strong>
+                                <small>{{ equipamento.identificacao }}</small>
+                                <span class="selected-check" aria-hidden="true">✓</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-inline">Nenhum equipamento está disponível no momento.</p>
+                {% endif %}
+
+                {% if form.equipamentos.errors %}
+                    <div class="field-errors" id="id_equipamentos-error">
+                        {% for error in form.equipamentos.errors %}<p>{{ error }}</p>{% endfor %}
+                    </div>
+                {% endif %}
+            </fieldset>
+
+            <div class="request-details-heading form-field-wide">
+                <h3>Dados da solicitação</h3>
+                <p>Todos os campos são obrigatórios.</p>
+            </div>
+
+            {% for field in form %}
+                {% if field.name != "equipamentos" %}
+                    <div class="form-field {% if field.name == 'finalidade' %}form-field-wide{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors" id="{{ field.id_for_label }}-error">
+                                {% for error in field.errors %}<p>{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% endfor %}
             <div class="form-actions form-field-wide">
                 <button class="button" type="submit" {% if not equipamentos %}disabled{% endif %}>

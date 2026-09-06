@@ -7,7 +7,7 @@ Projeto desenvolvido para o teste técnico de Estágio em Tecnologia — Desenvo
 ## Funcionalidades
 
 - página pública responsiva com catálogo de equipamentos ativos;
-- formulário com seleção de um ou mais equipamentos, validação no backend e novas solicitações sempre como `pendente`;
+- formulário com seletor visual por ícones para um ou mais equipamentos, validação no backend e novas solicitações sempre como `pendente`;
 - login e logout usando a autenticação nativa do Django;
 - dashboard protegido com contadores, listagem, busca e filtro por status;
 - confirmação e cancelamento de solicitações pendentes;

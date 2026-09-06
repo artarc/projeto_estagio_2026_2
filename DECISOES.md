@@ -38,7 +38,7 @@ A listagem é ordenada pela data de retirada e, em empate, pela criação. A bus
 
 ## Interface
 
-A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para sincronizar a seleção múltipla do catálogo com os checkboxes do formulário. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
+A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para atualizar o estado e o contador da seleção múltipla. Os cards com ícones são os próprios checkboxes do formulário, evitando repetir o catálogo em outro controle. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
 
 ## Docker
 

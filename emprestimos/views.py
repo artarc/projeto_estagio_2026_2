@@ -27,10 +27,22 @@ def home(request):
     else:
         form = SolicitacaoEmprestimoForm()
 
+    equipamentos_selecionados = []
+    if form.is_bound:
+        equipamentos_selecionados = [
+            int(equipamento_id)
+            for equipamento_id in request.POST.getlist("equipamentos")
+            if equipamento_id.isdigit()
+        ]
+
     return render(
         request,
         "emprestimos/home.html",
-        {"form": form, "equipamentos": equipamentos},
+        {
+            "form": form,
+            "equipamentos": equipamentos,
+            "equipamentos_selecionados": equipamentos_selecionados,
+        },
     )
 
 
