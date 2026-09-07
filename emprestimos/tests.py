@@ -297,6 +297,14 @@ class DashboardTests(TestCase):
 
         self.assertRedirects(response, f"{reverse('login')}?next={reverse('dashboard')}")
 
+    def test_login_nao_exibe_instrucao_sobre_usuario_django(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertNotContains(
+            response,
+            "Entre com o usuário administrador criado pelo Django.",
+        )
+
     def test_dashboard_autenticado_exibe_solicitacao(self):
         self.client.force_login(self.usuario)
 
