@@ -18,9 +18,9 @@ O SQLite atende ao volume e à finalidade demonstrativa do teste, simplifica a i
 
 O AssetFlow possui apenas o model necessário para identificar e selecionar equipamentos. Não foi criado CRUD próprio, pois o catálogo é considerado responsabilidade de outro processo da empresa. Uma fixture reproduz o estado inicial para avaliação.
 
-Uma solicitação pode reunir vários equipamentos com o mesmo período e finalidade. A relação muitos-para-muitos evita duplicar os dados da pessoa solicitante e mantém a análise do conjunto em uma única ação. A migration converte automaticamente o equipamento das solicitações antigas para essa nova relação.
+Uma solicitação pode reunir vários equipamentos com o mesmo período e finalidade. A relação muitos-para-muitos possui um item intermediário com a quantidade pedida, evitando duplicar os dados da pessoa solicitante e mantendo a análise do conjunto em uma única ação. A migration converte automaticamente as relações das solicitações antigas em itens com quantidade 1.
 
-Cada item do catálogo representa um tipo de equipamento e começa com cinco unidades. O painel exibe o total e a quantidade disponível usando os mesmos ícones da página pública. Uma solicitação confirmada consome uma unidade de cada equipamento selecionado; quando a data prevista de devolução fica no passado, a unidade volta automaticamente ao contador. Não foi criado um fluxo separado de devolução física para manter o escopo simples.
+Cada item do catálogo representa um tipo de equipamento e começa com cinco unidades. O painel exibe o total e a quantidade disponível usando os mesmos ícones da página pública. Uma solicitação confirmada consome a quantidade pedida de cada equipamento; quando a data prevista de devolução fica no passado, as unidades voltam automaticamente ao contador. Não foi criado um fluxo separado de devolução física para manter o escopo simples.
 
 ## Status e acesso ao painel
 
@@ -32,7 +32,9 @@ Confirmação e cancelamento são transições finais neste escopo. O painel tam
 
 Períodos são inclusivos: se uma reserva termina no dia em que outra começa, há conflito, pois o equipamento ainda está emprestado nessa data. A verificação usa a condição direta `início existente <= fim novo` e `fim existente >= início novo`.
 
-Somente solicitações confirmadas consomem estoque. Pendências podem se sobrepor para que o gestor decida quais atender. A confirmação é permitida enquanto a quantidade de reservas sobrepostas for menor que o estoque total do equipamento. Quando uma solicitação possui vários equipamentos, a falta de estoque de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. Em caso de indisponibilidade, a solicitação permanece pendente e uma mensagem explica o motivo. A retirada no formulário público também não pode estar no passado.
+Somente solicitações confirmadas consomem estoque. Pendências podem se sobrepor para que o gestor decida quais atender. A confirmação soma as quantidades simultâneas de cada equipamento e só ocorre quando todas cabem no estoque do período. Quando uma solicitação possui vários equipamentos, a falta de estoque de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. A retirada no formulário público também não pode estar no passado.
+
+O formulário público consulta o mesmo cálculo do backend assim que equipamento, quantidade ou datas mudam. Se faltar estoque, um aviso abaixo dos cards informa os itens afetados e oferece a primeira janela futura em que todas as quantidades selecionadas cabem juntas. A duração original é preservada, e o botão de sugestão atualiza retirada e devolução antes de uma nova consulta. Essa confirmação final também é refeita pelo backend no envio, sem confiar apenas no JavaScript.
 
 ## Ordenação, filtros e estado vazio
 
@@ -40,7 +42,7 @@ A listagem é ordenada pela data de retirada e, em empate, pela criação. A bus
 
 ## Interface
 
-A interface usa HTML semântico, CSS próprio e um pequeno JavaScript apenas para atualizar o estado e o contador da seleção múltipla. Os cards com ícones são os próprios checkboxes do formulário, evitando repetir o catálogo em outro controle. Um fragmento de template centraliza os ícones usados na home e no painel para manter os desenhos idênticos. O dashboard mantém tabela no desktop, lista os equipamentos de cada solicitação na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
+A interface usa HTML semântico, CSS próprio e JavaScript pequeno para quantidades, estado visual e consulta assíncrona de disponibilidade. Os cards com ícones continuam sendo os próprios checkboxes do formulário e recebem um controle numérico simples. Um fragmento de template centraliza os ícones usados na home e no painel para manter os desenhos idênticos. O dashboard mantém tabela no desktop, lista equipamentos e quantidades na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
 
 ## Docker
 

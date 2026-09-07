@@ -7,12 +7,13 @@ Projeto desenvolvido para o teste técnico de Estágio em Tecnologia — Desenvo
 ## Funcionalidades
 
 - página pública responsiva com catálogo de equipamentos ativos;
-- formulário com seletor visual por ícones para um ou mais equipamentos, validação no backend e novas solicitações sempre como `pendente`;
+- formulário com seletor visual por ícones, múltiplos equipamentos e quantidade por item;
+- consulta automática da disponibilidade no período e sugestão da próxima janela comum quando faltar estoque;
 - login e logout usando a autenticação nativa do Django;
 - dashboard protegido com contadores de estoque e solicitações, listagem, busca e filtro por status;
 - confirmação, cancelamento e exclusão de solicitações no painel;
 - devolução imediata ao estoque quando uma solicitação confirmada é excluída;
-- estoque inicial de cinco unidades por equipamento, reduzido por solicitações confirmadas e liberado após a devolução prevista;
+- estoque inicial de cinco unidades por equipamento, reduzido pelas quantidades confirmadas e liberado após a devolução prevista;
 - bloqueio da confirmação quando a quantidade disponível de qualquer equipamento solicitado se esgota no período;
 - indicação visual de disponibilidade na página pública;
 - estado vazio e feedback visual para ações e erros;
@@ -148,12 +149,13 @@ Não use os valores de desenvolvimento em produção.
 ## Como testar o fluxo
 
 1. Carregue os equipamentos e crie um superusuário.
-2. Acesse `/`, selecione dois ou mais equipamentos e envie uma única solicitação.
+2. Acesse `/`, selecione dois ou mais equipamentos, ajuste suas quantidades e informe o período.
 3. Confirme que o feedback de sucesso é exibido.
 4. Em uma sessão anônima, acesse `/dashboard/` e confirme o redirecionamento para `/login/`.
 5. Entre com o superusuário e confirme, cancele ou exclua uma solicitação. A exclusão de uma solicitação confirmada devolve seus equipamentos ao estoque.
-6. Para validar o estoque, confirme solicitações sobrepostas até ocupar as cinco unidades de um equipamento. Uma sexta solicitação para o mesmo período continuará pendente por inteiro.
-7. Teste a busca por nome/equipamento e o filtro por status.
+6. Para validar o estoque, confirme solicitações sobrepostas até ocupar as cinco unidades de um equipamento. Uma solicitação sem quantidade suficiente permanece pendente por inteiro.
+7. Selecione uma quantidade indisponível para conferir a próxima janela comum sugerida e use o botão para aplicar as novas datas.
+8. Teste a busca por nome/equipamento e o filtro por status.
 
 ## Testes automatizados
 
@@ -161,7 +163,7 @@ Não use os valores de desenvolvimento em produção.
 python manage.py test
 ```
 
-Os testes cobrem seleção múltipla, formulário público, equipamentos inativos e indisponíveis, estoque, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, exclusão, restrição de método HTTP e conflitos de período.
+Os testes cobrem seleção múltipla, quantidades, consulta e sugestão de disponibilidade, formulário público, equipamentos inativos, estoque, status inicial, autenticação obrigatória, dashboard, filtros, cancelamento, exclusão, restrição de método HTTP e conflitos de período.
 
 ## Decisões
 

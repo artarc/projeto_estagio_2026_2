@@ -104,8 +104,12 @@
                                 <td data-label="Solicitante"><strong>{{ solicitacao.nome }}</strong><small>{{ solicitacao.email }}</small></td>
                                 <td data-label="Equipamentos">
                                     <ul class="request-equipment-list">
-                                        {% for equipamento in solicitacao.equipamentos.all %}
-                                            <li>{{ equipamento.nome }}<small>{{ equipamento.identificacao }}</small></li>
+                                        {% for item in solicitacao.itens.all %}
+                                            <li>
+                                                {{ item.equipamento.nome }}
+                                                <span class="request-item-quantity">× {{ item.quantidade }}</span>
+                                                <small>{{ item.equipamento.identificacao }}</small>
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 </td>

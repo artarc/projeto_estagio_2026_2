@@ -63,39 +63,82 @@
             </div>
         {% endif %}
 
-        <form method="post" class="request-form" novalidate>
+        <form method="post" class="request-form" data-availability-url="{% url 'consultar_disponibilidade' %}" novalidate>
             {% csrf_token %}
+
+            <div class="request-details-heading form-field-wide period-heading">
+                <h3>Período do empréstimo</h3>
+                <p>Informe as datas para consultar a disponibilidade das quantidades.</p>
+            </div>
+
+            {% for field in form %}
+                {% if field.name == "data_retirada" or field.name == "data_devolucao" %}
+                    <div class="form-field">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors" id="{{ field.id_for_label }}-error">
+                                {% for error in field.errors %}<p>{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+
             <fieldset class="equipment-picker form-field-wide">
                 <legend>Equipamentos disponíveis</legend>
                 <div class="equipment-picker-heading">
-                    <p>Selecione um ou mais itens para sua necessidade de trabalho.</p>
-                    <span id="equipment-selection-count" aria-live="polite">0 selecionados</span>
+                    <p>Escolha os itens e ajuste a quantidade de cada equipamento.</p>
+                    <span id="equipment-selection-count" aria-live="polite">0 unidades selecionadas</span>
                 </div>
 
                 {% if equipamentos %}
                     <div class="equipment-options">
                         {% for equipamento in equipamentos %}
-                            <label class="equipment-option{% if equipamento.quantidade_disponivel == 0 %} is-unavailable{% endif %}" data-equipment-id="{{ equipamento.pk }}">
+                            <article
+                                class="equipment-option{% if equipamento.quantidade_disponivel == 0 %} is-currently-unavailable{% endif %}"
+                                data-equipment-id="{{ equipamento.pk }}"
+                                data-equipment-name="{{ equipamento.nome }}"
+                                data-total-quantity="{{ equipamento.quantidade_total }}"
+                                data-current-available="{{ equipamento.quantidade_disponivel }}"
+                            >
                                 <input
+                                    class="equipment-checkbox"
                                     type="checkbox"
+                                    id="equipment-{{ equipamento.pk }}"
                                     name="equipamentos"
                                     value="{{ equipamento.pk }}"
                                     {% if equipamento.pk in equipamentos_selecionados %}checked{% endif %}
-                                    {% if equipamento.quantidade_disponivel == 0 %}disabled aria-disabled="true"{% endif %}
                                     {% if form.equipamentos.errors %}aria-describedby="id_equipamentos-error"{% endif %}
                                 >
-                                <span class="equipment-icon" aria-hidden="true">
-                                    {% include "emprestimos/_equipment_icon.html" %}
-                                </span>
-                                <strong>{{ equipamento.nome }}</strong>
-                                <small>{{ equipamento.identificacao }}</small>
+                                <label class="equipment-card-label" for="equipment-{{ equipamento.pk }}">
+                                    <span class="equipment-icon" aria-hidden="true">
+                                        {% include "emprestimos/_equipment_icon.html" %}
+                                    </span>
+                                    <strong>{{ equipamento.nome }}</strong>
+                                    <small>{{ equipamento.identificacao }}</small>
+                                    <span class="selected-check" aria-hidden="true">✓</span>
+                                </label>
+                                <div class="equipment-quantity" aria-label="Quantidade de {{ equipamento.nome }}">
+                                    <button class="quantity-button" type="button" data-quantity-action="decrease" aria-label="Diminuir quantidade de {{ equipamento.nome }}">−</button>
+                                    <input
+                                        class="equipment-quantity-input"
+                                        type="number"
+                                        name="quantidade_{{ equipamento.pk }}"
+                                        value="{{ equipamento.quantidade_solicitada }}"
+                                        min="0"
+                                        max="{{ equipamento.quantidade_total }}"
+                                        inputmode="numeric"
+                                        aria-label="Quantidade solicitada de {{ equipamento.nome }}"
+                                    >
+                                    <button class="quantity-button" type="button" data-quantity-action="increase" aria-label="Aumentar quantidade de {{ equipamento.nome }}">+</button>
+                                </div>
                                 {% if equipamento.quantidade_disponivel > 0 %}
-                                    <span class="availability-flag availability-available">Disponível</span>
+                                    <span class="availability-flag availability-available" data-equipment-status>Disponível</span>
                                 {% else %}
-                                    <span class="availability-flag availability-unavailable">Indisponível</span>
+                                    <span class="availability-flag availability-unavailable" data-equipment-status>Indisponível agora</span>
                                 {% endif %}
-                                <span class="selected-check" aria-hidden="true">✓</span>
-                            </label>
+                            </article>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -107,6 +150,21 @@
                         {% for error in form.equipamentos.errors %}<p>{{ error }}</p>{% endfor %}
                     </div>
                 {% endif %}
+
+                <div class="availability-notice{% if proxima_janela %} is-error{% else %} is-hidden{% endif %}" id="equipment-availability-notice" role="status" aria-live="polite">
+                    <span class="availability-notice-icon" aria-hidden="true">i</span>
+                    <div>
+                        <strong id="availability-notice-title">{% if proxima_janela %}Quantidade indisponível neste período{% endif %}</strong>
+                        <p id="availability-notice-description">{% if proxima_janela %}A próxima janela comum é de {{ proxima_janela.0|date:"d/m/Y" }} a {{ proxima_janela.1|date:"d/m/Y" }}.{% endif %}</p>
+                    </div>
+                    <button
+                        class="availability-date-button{% if not proxima_janela %} is-hidden{% endif %}"
+                        id="use-suggested-dates"
+                        type="button"
+                        data-withdrawal-date="{% if proxima_janela %}{{ proxima_janela.0|date:"Y-m-d" }}{% endif %}"
+                        data-return-date="{% if proxima_janela %}{{ proxima_janela.1|date:"Y-m-d" }}{% endif %}"
+                    >Usar estas datas</button>
+                </div>
             </fieldset>
 
             <div class="request-details-heading form-field-wide">
@@ -115,7 +173,7 @@
             </div>
 
             {% for field in form %}
-                {% if field.name != "equipamentos" %}
+                {% if field.name != "equipamentos" and field.name != "data_retirada" and field.name != "data_devolucao" %}
                     <div class="form-field {% if field.name == 'finalidade' %}form-field-wide{% endif %}">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
