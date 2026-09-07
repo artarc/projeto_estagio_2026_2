@@ -66,13 +66,13 @@
         <form method="post" class="request-form" data-availability-url="{% url 'consultar_disponibilidade' %}" novalidate>
             {% csrf_token %}
 
-            <div class="request-details-heading form-field-wide period-heading">
-                <h3>Período do empréstimo</h3>
-                <p>Informe as datas para consultar a disponibilidade das quantidades.</p>
+            <div class="request-details-heading form-field-wide">
+                <h3>Dados da solicitação</h3>
+                <p>Todos os campos são obrigatórios.</p>
             </div>
 
             {% for field in form %}
-                {% if field.name == "data_retirada" or field.name == "data_devolucao" %}
+                {% if field.name == "nome" or field.name == "email" %}
                     <div class="form-field">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
@@ -167,14 +167,14 @@
                 </div>
             </fieldset>
 
-            <div class="request-details-heading form-field-wide">
-                <h3>Dados da solicitação</h3>
-                <p>Todos os campos são obrigatórios.</p>
+            <div class="request-details-heading form-field-wide period-heading">
+                <h3>Período do empréstimo</h3>
+                <p>Informe as datas para consultar a disponibilidade das quantidades.</p>
             </div>
 
             {% for field in form %}
-                {% if field.name != "equipamentos" and field.name != "data_retirada" and field.name != "data_devolucao" %}
-                    <div class="form-field {% if field.name == 'finalidade' %}form-field-wide{% endif %}">
+                {% if field.name == "data_retirada" or field.name == "data_devolucao" %}
+                    <div class="form-field">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
                         {% if field.errors %}
@@ -185,6 +185,21 @@
                     </div>
                 {% endif %}
             {% endfor %}
+
+            {% for field in form %}
+                {% if field.name == "finalidade" %}
+                    <div class="form-field form-field-wide">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-errors" id="{{ field.id_for_label }}-error">
+                                {% for error in field.errors %}<p>{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+
             <div class="form-actions form-field-wide">
                 <button class="button" type="submit" {% if not tem_equipamentos_disponiveis %}disabled{% endif %}>
                     Enviar solicitação

@@ -50,6 +50,20 @@ class PaginaPublicaTests(TestCase):
     def test_equipamento_tem_cinco_unidades_por_padrao(self):
         self.assertEqual(self.equipamento.quantidade_total, 5)
 
+    def test_formulario_exibe_campos_na_ordem_do_fluxo(self):
+        response = self.client.get(reverse("home"))
+        conteudo = response.content.decode()
+
+        posicoes = [
+            conteudo.index('id="id_nome"'),
+            conteudo.index('id="id_email"'),
+            conteudo.index('class="equipment-picker form-field-wide"'),
+            conteudo.index('id="id_data_retirada"'),
+            conteudo.index('id="id_data_devolucao"'),
+            conteudo.index('id="id_finalidade"'),
+        ]
+        self.assertEqual(posicoes, sorted(posicoes))
+
     def test_solicitacao_valida_nasce_pendente(self):
         dados = {**self.dados_validos, "status": "confirmado"}
 
