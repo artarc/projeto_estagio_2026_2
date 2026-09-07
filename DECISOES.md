@@ -1,61 +1,31 @@
-# Decisões do AssetFlow
-
 ## Tema
+Escolhi desenvolver um sistema de **solicitação e aluguel de equipamentos de TI**, com um fluxo simples: o usuário solicita os equipamentos e o gestor analisa, confirma ou cancela o pedido.
 
-Empréstimos de equipamentos de TI representam bem o fluxo pedido: uma pessoa externa ao painel envia uma solicitação e uma pessoa gestora analisa. O tema permite demonstrar uma regra de negócio útil sem transformar o teste em um sistema de inventário.
+## Tecnologias
+Utilizei **Django 5.2 LTS com Python 3.12**, aproveitando recursos nativos como autenticação, formulários, ORM, validações e proteção CSRF.
+Optei por **Django Templates** para evitar um frontend separado e manter o projeto mais simples.
+O banco escolhido foi o **SQLite**, suficiente para o escopo demonstrativo. Em um cenário maior, poderia ser substituído por PostgreSQL.
 
-## Django e Django Templates
+## Equipamentos e solicitações
+Mantive os equipamentos previamente cadastrados e decidi não criar um CRUD completo, pois isso aumentaria o escopo sem necessidade.
+As solicitações são criadas como **pendentes** e podem ser confirmadas, canceladas ou excluídas pelo painel.
+Implementei regras para que somente solicitações confirmadas consumam estoque e para impedir confirmações quando não houver quantidade suficiente.
+Também adaptei o sistema para permitir **vários equipamentos e diferentes quantidades em uma mesma solicitação**.
 
-O Django reúne formulários, validação, ORM, proteção CSRF e autenticação pronta em uma estrutura convencional. Isso reduz código próprio e deixa o fluxo fácil de explicar. Como limitação, a aplicação fica mais acoplada ao framework e não oferece uma API separada, algo desnecessário neste escopo.
+## Disponibilidade
+Implementei a validação de conflitos de datas e disponibilidade de estoque.
+O formulário verifica a disponibilidade automaticamente e, quando necessário, sugere uma nova data em que todos os equipamentos estarão disponíveis.
+As validações principais também são refeitas no backend para garantir segurança e consistência.
 
-Foi usada a série 5.2 por ser LTS e compatível com Python 3.12. Templates renderizados no servidor evitam um frontend separado e dependências de build.
-
-## SQLite
-
-O SQLite atende ao volume e à finalidade demonstrativa do teste, simplifica a instalação e permite executar tudo com um único processo. Ele não é a escolha indicada para alta concorrência; se o produto crescesse, a migração para um banco servidor seria reavaliada.
-
-## Equipamentos previamente cadastrados
-
-O AssetFlow possui apenas o model necessário para identificar e selecionar equipamentos. Não foi criado CRUD próprio, pois o catálogo é considerado responsabilidade de outro processo da empresa. Uma fixture reproduz o estado inicial para avaliação.
-
-Uma solicitação pode reunir vários equipamentos com o mesmo período e finalidade. A relação muitos-para-muitos possui um item intermediário com a quantidade pedida, evitando duplicar os dados da pessoa solicitante e mantendo a análise do conjunto em uma única ação. A migration converte automaticamente as relações das solicitações antigas em itens com quantidade 1.
-
-Cada item do catálogo representa um tipo de equipamento e começa com cinco unidades. O painel exibe o total e a quantidade disponível usando os mesmos ícones da página pública. Uma solicitação confirmada consome a quantidade pedida de cada equipamento; quando a data prevista de devolução fica no passado, as unidades voltam automaticamente ao contador. Não foi criado um fluxo separado de devolução física para manter o escopo simples.
-
-## Status e acesso ao painel
-
-Toda solicitação pública nasce como `pendente`; o campo de status não faz parte do formulário. Confirmar e cancelar são ações via POST e protegidas por login e CSRF. Para manter as permissões simples, qualquer usuário autenticado acessa o painel; o README orienta criar um superusuário para a avaliação.
-
-Uma solicitação pendente pode ser confirmada ou cancelada. Uma solicitação confirmada também pode ser cancelada, devolvendo imediatamente suas quantidades ao estoque; o estado cancelado é final neste escopo. O painel ainda permite excluir qualquer solicitação mediante confirmação explícita no navegador. Ao excluir uma solicitação confirmada, sua relação com os equipamentos deixa de existir e as unidades retornam imediatamente ao estoque calculado. Essa exclusão é permanente e foi incluída como uma ação administrativa direta, conforme solicitado.
-
-## Datas e conflito
-
-Períodos são inclusivos: se uma reserva termina no dia em que outra começa, há conflito, pois o equipamento ainda está emprestado nessa data. A verificação usa a condição direta `início existente <= fim novo` e `fim existente >= início novo`.
-
-Somente solicitações confirmadas consomem estoque. Pendências podem se sobrepor para que o gestor decida quais atender. A confirmação soma as quantidades simultâneas de cada equipamento e só ocorre quando todas cabem no estoque do período. Quando uma solicitação possui vários equipamentos, a falta de estoque de qualquer um deles bloqueia a confirmação do conjunto inteiro; não há confirmação parcial. A retirada no formulário público também não pode estar no passado.
-
-O formulário público consulta o mesmo cálculo do backend assim que equipamento, quantidade ou datas mudam. Se faltar estoque, um aviso abaixo dos cards informa os itens afetados e oferece a primeira janela futura em que todas as quantidades selecionadas cabem juntas. A duração original é preservada, e o botão de sugestão atualiza retirada e devolução antes de uma nova consulta. Essa confirmação final também é refeita pelo backend no envio, sem confiar apenas no JavaScript.
-
-## Ordenação, filtros e estado vazio
-
-A listagem é ordenada pela data de retirada e, em empate, pela criação. A busca cobre nome da pessoa e nome do equipamento; o filtro de status é propositalmente simples. Contadores e estado vazio foram incluídos para o painel continuar útil nos cenários comuns.
-
-## Interface
-
-A interface usa HTML semântico, CSS próprio e JavaScript pequeno para quantidades, estado visual e consulta assíncrona de disponibilidade. Os cards com ícones continuam sendo os próprios checkboxes do formulário e recebem um controle numérico simples. Um fragmento de template centraliza os ícones usados na home e no painel para manter os desenhos idênticos. O dashboard mantém tabela no desktop, lista equipamentos e quantidades na mesma célula e transforma cada linha em um bloco rotulado no celular. Não foi adicionada biblioteca de componentes ou toolchain de frontend.
+## Interface e painel
+Desenvolvi a interface com **HTML, CSS e JavaScript**, mantendo poucas dependências.
+O painel possui busca, filtros, indicadores e adaptação para desktop e celular.
+Também realizei ajustes de responsividade, posicionamento de elementos e experiência do usuário.
 
 ## Docker
+Utilizei **Docker** para padronizar a execução do projeto, mantendo uma estrutura simples com um único serviço web e persistência do SQLite em volume.
 
-O Docker padroniza a execução, mas mantém apenas um serviço web. O banco SQLite é persistido em um volume nomeado. Redis, Celery, Nginx e outros serviços não agregariam valor ao teste e aumentariam a explicação e manutenção.
-
-## Cortes de escopo
-
-Ficaram conscientemente fora: CRUD de equipamentos, movimentações manuais e histórico detalhado de estoque, fornecedores, clientes, notificações por e-mail, recuperação de senha personalizada, níveis complexos de permissão, API REST, integrações externas, relatórios avançados, multiempresa e atualização em tempo real.
-
-## Uso de IA — preencher antes da entrega
-
-Esta seção deve refletir sua experiência real. Substitua os campos abaixo antes de abrir o Pull Request; não mantenha exemplos inventados.
-
-1. **O que deleguei para IA e o que fiz à mão:** [descreva aqui quais partes foram delegadas, quais você revisou ou produziu e por quê].
-2. **Uma sugestão ou implementação ruim da IA:** [descreva o que estava errado, como você percebeu e o que fez no lugar].
-3. **Uma decisão tomada contra a sugestão da IA:** [descreva a decisão e o motivo].
+## Uso de IA
+Eu desenvolvi todo o projeto com apoio do Codex. Primeiro, montei um prompt com as principais instruções e definições do serviço. Depois que a estrutura inicial foi gerada, fui revisando o código e os elementos implementados, removendo textos e funcionalidades desnecessárias adicionadas pela IA.
+Na revisão, percebi que a lógica de aluguel de equipamentos precisava ser alterada, pois inicialmente só era possível solicitar um equipamento de um único tipo por vez. Fiz os ajustes necessários para deixar esse fluxo mais flexível.
+Também implementei melhorias no visual do sistema e corrigi pequenos problemas de interface, como posicionamento de botões, alinhamentos e quebras de layout.
