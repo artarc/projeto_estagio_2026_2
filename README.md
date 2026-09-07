@@ -1,3 +1,15 @@
+# AssetFlow
+
+Sistema desenvolvido para o teste técnico de Estágio Full Stack da Mupi Systems. Permite solicitar empréstimos de equipamentos de TI e gerenciar os pedidos em um painel autenticado.
+
+## Funcionalidades
+
+- solicitação pública de um ou mais equipamentos, com quantidade por item;
+- consulta de disponibilidade por período e sugestão de novas datas;
+- painel protegido por login, com busca e filtro por status;
+- confirmação, cancelamento e exclusão de solicitações;
+- atualização automática do estoque ao confirmar, cancelar ou excluir pedidos;
+- interface responsiva para desktop e celular.
 ## Stack
 
 - Python 3.12+
