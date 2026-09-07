@@ -2,16 +2,26 @@ from datetime import date
 
 from django import forms
 
-from .models import Equipamento, SolicitacaoEmprestimo
+from .models import Equipamento, ItemSolicitacao, SolicitacaoEmprestimo
+from .services import encontrar_proxima_janela, verificar_disponibilidade
 
 
 class SolicitacaoEmprestimoForm(forms.ModelForm):
+    equipamentos = forms.ModelMultipleChoiceField(
+        queryset=Equipamento.objects.none(),
+        widget=forms.CheckboxSelectMultiple(),
+        label="Equipamentos",
+        error_messages={
+            "required": "Selecione ao menos uma unidade de um equipamento.",
+            "invalid_choice": "Um dos equipamentos selecionados não está disponível para solicitação.",
+        },
+    )
+
     class Meta:
         model = SolicitacaoEmprestimo
         fields = [
             "nome",
             "email",
-            "equipamentos",
             "data_retirada",
             "data_devolucao",
             "finalidade",
@@ -23,7 +33,6 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
             "email": forms.EmailInput(
                 attrs={"placeholder": "seu.email@empresa.com", "autocomplete": "email"}
             ),
-            "equipamentos": forms.CheckboxSelectMultiple(),
             "data_retirada": forms.DateInput(attrs={"type": "date"}),
             "data_devolucao": forms.DateInput(attrs={"type": "date"}),
             "finalidade": forms.Textarea(
@@ -36,7 +45,6 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
         labels = {
             "nome": "Nome completo",
             "email": "E-mail",
-            "equipamentos": "Equipamentos",
             "data_retirada": "Data de retirada",
             "data_devolucao": "Data prevista de devolução",
             "finalidade": "Finalidade do empréstimo",
@@ -44,14 +52,24 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["equipamentos"].queryset = (
-            Equipamento.objects.com_disponibilidade()
-            .filter(ativo=True, quantidade_disponivel__gt=0)
-            .order_by("pk")
-        )
-        self.fields["equipamentos"].error_messages["invalid_choice"] = (
-            "Um dos equipamentos selecionados não está disponível no momento."
-        )
+        equipamentos = Equipamento.objects.filter(ativo=True).order_by("pk")
+        self.fields["equipamentos"].queryset = equipamentos
+
+        if self.is_bound:
+            dados = self.data.copy()
+            equipamentos_selecionados = []
+            for equipamento in equipamentos:
+                try:
+                    quantidade = int(
+                        dados.get(f"quantidade_{equipamento.pk}", 0) or 0
+                    )
+                except (TypeError, ValueError):
+                    quantidade = 0
+                if quantidade > 0:
+                    equipamentos_selecionados.append(str(equipamento.pk))
+            dados.setlist("equipamentos", equipamentos_selecionados)
+            self.data = dados
+
         minimum_date = date.today().isoformat()
         self.fields["data_retirada"].widget.attrs["min"] = minimum_date
         self.fields["data_devolucao"].widget.attrs["min"] = minimum_date
@@ -73,6 +91,34 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
             raise forms.ValidationError("A retirada não pode estar no passado.")
         return data_retirada
 
+    def clean_equipamentos(self):
+        equipamentos = self.cleaned_data["equipamentos"]
+        itens_solicitados = []
+
+        for equipamento in equipamentos:
+            try:
+                quantidade = int(
+                    self.data.get(f"quantidade_{equipamento.pk}", 0) or 0
+                )
+            except (TypeError, ValueError):
+                raise forms.ValidationError(
+                    f"Informe uma quantidade válida para {equipamento.nome}."
+                )
+
+            if quantidade < 1:
+                raise forms.ValidationError(
+                    f"Informe ao menos uma unidade de {equipamento.nome}."
+                )
+            if quantidade > equipamento.quantidade_total:
+                raise forms.ValidationError(
+                    f"A quantidade de {equipamento.nome} não pode ultrapassar "
+                    f"{equipamento.quantidade_total}."
+                )
+            itens_solicitados.append((equipamento, quantidade))
+
+        self.itens_solicitados = itens_solicitados
+        return equipamentos
+
     def clean(self):
         cleaned_data = super().clean()
         retirada = cleaned_data.get("data_retirada")
@@ -91,4 +137,42 @@ class SolicitacaoEmprestimoForm(forms.ModelForm):
                 "Um dos equipamentos selecionados não está disponível para solicitação.",
             )
 
+        itens_solicitados = getattr(self, "itens_solicitados", [])
+        if retirada and devolucao and retirada <= devolucao and itens_solicitados:
+            resultado = verificar_disponibilidade(
+                itens_solicitados,
+                retirada,
+                devolucao,
+            )
+            if not resultado["disponivel"]:
+                indisponiveis = ", ".join(
+                    item["equipamento"].nome
+                    for item in resultado["itens"]
+                    if not item["disponivel"]
+                )
+                self.proxima_janela = encontrar_proxima_janela(
+                    itens_solicitados,
+                    retirada,
+                    devolucao,
+                )
+                self.add_error(
+                    "equipamentos",
+                    f"Quantidade indisponível no período informado: {indisponiveis}.",
+                )
+
         return cleaned_data
+
+    def save(self, commit=True):
+        solicitacao = super().save(commit=commit)
+        if commit:
+            ItemSolicitacao.objects.bulk_create(
+                [
+                    ItemSolicitacao(
+                        solicitacao=solicitacao,
+                        equipamento=equipamento,
+                        quantidade=quantidade,
+                    )
+                    for equipamento, quantidade in self.itens_solicitados
+                ]
+            )
+        return solicitacao

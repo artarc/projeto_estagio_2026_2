@@ -2,21 +2,28 @@ from datetime import date
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count, F, IntegerField, Q, Value
-from django.db.models.functions import Greatest
+from django.db.models import F, IntegerField, Q, Sum, Value
+from django.db.models.functions import Coalesce, Greatest
 
 
 class EquipamentoQuerySet(models.QuerySet):
     def com_disponibilidade(self, data_referencia=None):
         data_referencia = data_referencia or date.today()
         return self.annotate(
-            quantidade_reservada=Count(
-                "solicitacoes",
-                filter=Q(
-                    solicitacoes__status=SolicitacaoEmprestimo.Status.CONFIRMADO,
-                    solicitacoes__data_devolucao__gte=data_referencia,
+            quantidade_reservada=Coalesce(
+                Sum(
+                    "itens_solicitacao__quantidade",
+                    filter=Q(
+                        itens_solicitacao__solicitacao__status=(
+                            SolicitacaoEmprestimo.Status.CONFIRMADO
+                        ),
+                        itens_solicitacao__solicitacao__data_devolucao__gte=(
+                            data_referencia
+                        ),
+                    ),
                 ),
-                distinct=True,
+                Value(0),
+                output_field=IntegerField(),
             )
         ).annotate(
             quantidade_disponivel=Greatest(
@@ -55,6 +62,7 @@ class SolicitacaoEmprestimo(models.Model):
     email = models.EmailField()
     equipamentos = models.ManyToManyField(
         Equipamento,
+        through="ItemSolicitacao",
         related_name="solicitacoes",
     )
     data_retirada = models.DateField()
@@ -90,18 +98,19 @@ class SolicitacaoEmprestimo(models.Model):
             )
 
     def tem_conflito_confirmado(self):
-        for equipamento in self.equipamentos.all():
-            reservas_no_periodo = SolicitacaoEmprestimo.objects.filter(
-                equipamentos=equipamento,
-                status=self.Status.CONFIRMADO,
-                data_retirada__lte=self.data_devolucao,
-                data_devolucao__gte=self.data_retirada,
-            ).exclude(pk=self.pk).count()
+        from .services import verificar_disponibilidade
 
-            if reservas_no_periodo >= equipamento.quantidade_total:
-                return True
-
-        return False
+        itens = [
+            (item.equipamento, item.quantidade)
+            for item in self.itens.select_related("equipamento")
+        ]
+        resultado = verificar_disponibilidade(
+            itens,
+            self.data_retirada,
+            self.data_devolucao,
+            excluir_solicitacao_id=self.pk,
+        )
+        return not resultado["disponivel"]
 
     def confirmar(self):
         if self.status != self.Status.PENDENTE:
@@ -124,5 +133,40 @@ class SolicitacaoEmprestimo(models.Model):
     def __str__(self):
         if not self.pk:
             return self.nome
-        nomes = ", ".join(self.equipamentos.values_list("nome", flat=True))
+        nomes = ", ".join(
+            f"{item.equipamento.nome} × {item.quantidade}"
+            for item in self.itens.select_related("equipamento")
+        )
         return f"{self.nome} — {nomes}"
+
+
+class ItemSolicitacao(models.Model):
+    solicitacao = models.ForeignKey(
+        SolicitacaoEmprestimo,
+        on_delete=models.CASCADE,
+        related_name="itens",
+    )
+    equipamento = models.ForeignKey(
+        Equipamento,
+        on_delete=models.PROTECT,
+        related_name="itens_solicitacao",
+    )
+    quantidade = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["equipamento_id"]
+        verbose_name = "item da solicitação"
+        verbose_name_plural = "itens da solicitação"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["solicitacao", "equipamento"],
+                name="item_unico_por_solicitacao_e_equipamento",
+            ),
+            models.CheckConstraint(
+                condition=Q(quantidade__gte=1),
+                name="quantidade_item_maior_que_zero",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.equipamento.nome} × {self.quantidade}"
