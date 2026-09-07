@@ -25,7 +25,15 @@ Também realizei ajustes de responsividade, posicionamento de elementos e experi
 ## Docker
 Utilizei **Docker** para padronizar a execução do projeto, mantendo uma estrutura simples com um único serviço web e persistência do SQLite em volume.
 
+##Cortes de escopo
+Decidi não implementar cadastro completo de equipamentos, notificações por e-mail, recuperação de senha, níveis diferentes de permissão e paginação. Essas funcionalidades aumentariam o escopo sem contribuir diretamente para o fluxo principal avaliado no teste. Para o volume demonstrativo do projeto, a listagem atual e um único nível de acesso administrativo são suficientes.
+
 ## Uso de IA
-Eu desenvolvi todo o projeto com apoio do Codex. Primeiro, montei um prompt com as principais instruções e definições do serviço. Depois que a estrutura inicial foi gerada, fui revisando o código e os elementos implementados, removendo textos e funcionalidades desnecessárias adicionadas pela IA.
-Na revisão, percebi que a lógica de aluguel de equipamentos precisava ser alterada, pois inicialmente só era possível solicitar um equipamento de um único tipo por vez. Fiz os ajustes necessários para deixar esse fluxo mais flexível.
-Também implementei melhorias no visual do sistema e corrigi pequenos problemas de interface, como posicionamento de botões, alinhamentos e quebras de layout.
+O que deleguei para a IA
+Utilizei o Codex para gerar a estrutura inicial do projeto Django e auxiliar na implementação dos models, formulários, views, templates, estilos e testes. Minha participação foi definir o tema e as regras de negócio, revisar o resultado, testar os fluxos e solicitar correções conforme os problemas encontrados.
+
+Uma implementação ruim gerada pela IA
+A primeira versão permitia solicitar apenas um equipamento e uma unidade por vez. Percebi que isso não representava uma solicitação real, pois uma pessoa pode precisar, por exemplo, de dois notebooks e um monitor. Por isso, alterei o fluxo para aceitar vários equipamentos e quantidades diferentes na mesma solicitação, incluindo a validação de estoque.
+
+Uma decisão tomada contra a sugestão da IA
+A IA adicionou textos explicativos e documentação mais extensa do que eu considerava necessário, incluindo uma instrução sobre o usuário do Django na tela de login. Decidi remover esses textos e simplificar o README para deixar a interface e a documentação mais diretas, mantendo somente as informações necessárias para entender e executar o projeto.
