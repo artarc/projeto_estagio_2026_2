@@ -125,6 +125,8 @@
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                                 <button class="action-button action-confirm" type="submit">Confirmar</button>
                                             </form>
+                                        {% endif %}
+                                        {% if solicitacao.status != "cancelado" %}
                                             <form method="post" action="{% url 'cancelar_solicitacao' solicitacao.pk %}">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">

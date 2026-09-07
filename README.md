@@ -11,7 +11,8 @@ Projeto desenvolvido para o teste técnico de Estágio em Tecnologia — Desenvo
 - consulta automática da disponibilidade no período e sugestão da próxima janela comum quando faltar estoque;
 - login e logout usando a autenticação nativa do Django;
 - dashboard protegido com contadores de estoque e solicitações, listagem, busca e filtro por status;
-- confirmação, cancelamento e exclusão de solicitações no painel;
+- confirmação, cancelamento de pedidos pendentes ou confirmados e exclusão de solicitações no painel;
+- devolução imediata ao estoque quando uma solicitação confirmada é cancelada;
 - devolução imediata ao estoque quando uma solicitação confirmada é excluída;
 - estoque inicial de cinco unidades por equipamento, reduzido pelas quantidades confirmadas e liberado após a devolução prevista;
 - bloqueio da confirmação quando a quantidade disponível de qualquer equipamento solicitado se esgota no período;

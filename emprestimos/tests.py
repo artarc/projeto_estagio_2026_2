@@ -348,6 +348,35 @@ class DashboardTests(TestCase):
             SolicitacaoEmprestimo.Status.CANCELADO,
         )
 
+    def test_cancelamento_confirmado_devolve_quantidade_ao_estoque(self):
+        self.solicitacao.status = SolicitacaoEmprestimo.Status.CONFIRMADO
+        self.solicitacao.save(update_fields=["status"])
+        self.client.force_login(self.usuario)
+        url = reverse("cancelar_solicitacao", args=[self.solicitacao.pk])
+
+        dashboard = self.client.get(reverse("dashboard"))
+        self.assertContains(dashboard, url)
+        self.assertContains(dashboard, "<b>3</b> de 5 disponíveis", html=True)
+
+        response = self.client.post(url, follow=True)
+
+        self.solicitacao.refresh_from_db()
+        self.assertEqual(
+            self.solicitacao.status,
+            SolicitacaoEmprestimo.Status.CANCELADO,
+        )
+        equipamento = next(
+            item
+            for item in response.context["equipamentos"]
+            if item.pk == self.equipamento.pk
+        )
+        self.assertEqual(equipamento.quantidade_disponivel, 5)
+        self.assertContains(
+            response,
+            "Solicitação cancelada. O estoque dos equipamentos foi atualizado.",
+        )
+        self.assertNotContains(response, url)
+
     def test_acao_preserva_filtros_do_dashboard(self):
         self.client.force_login(self.usuario)
         destino = f"{reverse('dashboard')}?q=Bruno&status=pendente"

@@ -124,7 +124,7 @@ class SolicitacaoEmprestimo(models.Model):
         return True
 
     def cancelar(self):
-        if self.status != self.Status.PENDENTE:
+        if self.status not in {self.Status.PENDENTE, self.Status.CONFIRMADO}:
             return False
         self.status = self.Status.CANCELADO
         self.save(update_fields=["status"])

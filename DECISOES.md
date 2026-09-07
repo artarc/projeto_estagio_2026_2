@@ -26,7 +26,7 @@ Cada item do catálogo representa um tipo de equipamento e começa com cinco uni
 
 Toda solicitação pública nasce como `pendente`; o campo de status não faz parte do formulário. Confirmar e cancelar são ações via POST e protegidas por login e CSRF. Para manter as permissões simples, qualquer usuário autenticado acessa o painel; o README orienta criar um superusuário para a avaliação.
 
-Confirmação e cancelamento são transições finais neste escopo. O painel também permite excluir qualquer solicitação mediante confirmação explícita no navegador. Ao excluir uma solicitação confirmada, sua relação com os equipamentos deixa de existir e as unidades retornam imediatamente ao estoque calculado. Essa exclusão é permanente e foi incluída como uma ação administrativa direta, conforme solicitado.
+Uma solicitação pendente pode ser confirmada ou cancelada. Uma solicitação confirmada também pode ser cancelada, devolvendo imediatamente suas quantidades ao estoque; o estado cancelado é final neste escopo. O painel ainda permite excluir qualquer solicitação mediante confirmação explícita no navegador. Ao excluir uma solicitação confirmada, sua relação com os equipamentos deixa de existir e as unidades retornam imediatamente ao estoque calculado. Essa exclusão é permanente e foi incluída como uma ação administrativa direta, conforme solicitado.
 
 ## Datas e conflito
 

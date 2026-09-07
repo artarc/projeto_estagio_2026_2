@@ -229,8 +229,19 @@ def cancelar_solicitacao(request, pk):
             SolicitacaoEmprestimo.objects.select_for_update(),
             pk=pk,
         )
+        estava_confirmada = (
+            solicitacao.status == SolicitacaoEmprestimo.Status.CONFIRMADO
+        )
+        if estava_confirmada:
+            list(solicitacao.equipamentos.select_for_update())
         if solicitacao.cancelar():
-            messages.success(request, "Solicitação cancelada com sucesso.")
+            if estava_confirmada:
+                messages.success(
+                    request,
+                    "Solicitação cancelada. O estoque dos equipamentos foi atualizado.",
+                )
+            else:
+                messages.success(request, "Solicitação cancelada com sucesso.")
         else:
             messages.info(request, "A solicitação já foi analisada.")
 
